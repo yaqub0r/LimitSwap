@@ -119,9 +119,8 @@ def printt(*print_args, write_to_log=False):
     #
     # returns: nothing
 
-    print(timestamp(), ' '.join(map(str, print_args)))
-    
     if bot_settings['_NEED_NEW_LINE'] == True: print()
+    print(timestamp(), ' '.join(map(str, print_args)))
     if write_to_log == True:
         logging.info(' '.join(map(str,print_args)))
 
@@ -249,6 +248,7 @@ def printt_sell_price(token_dict, token_price):
     price_message = token_dict['SYMBOL'] + " Price:" + str(token_price) + " Buy:" + str(token_dict['BUYPRICEINBASE']) 
     price_message = price_message + " Sell:" + str(token_dict['SELLPRICEINBASE']) + " Stop:" + str(token_dict['STOPLOSSPRICEINBASE'])
     price_message = price_message + " ATH:" + str(token_dict['_ALL_TIME_HIGH']) + " ATL:" + str(token_dict['_ALL_TIME_LOW'])
+    price_message = price_message + " Queries/s: " + bot_settings['_QUERIES_PER_SECOND'] 
 
     if price_message == token_dict['_LAST_PRICE_MESSAGE'] and bot_settings['VERBOSE_PRICING'] == 'false':
         print (".", end='', flush=True)
@@ -317,11 +317,12 @@ def load_settings_file(settings_path, load_message=True):
     ]
 
     program_defined_values = {
-        '_NEED_NEW_LINE' : False
+        '_NEED_NEW_LINE' : False,
+        '_QUERIES_PER_SECOND' : 'Unknown'
     }
 
     for default_true in default_true_settings:
-        if default_true not in settings:
+        if default_true not in bot_settings:
             print(timestamp(),default_true, "not found in settings configuration file, settings a default value of false.")
             bot_settings[default_true] = "true"
         else:
@@ -443,7 +444,6 @@ def load_tokens_file(tokens_path, load_message=True):
     }
 
     # There are values that we will set internally. They must all begin with _
-    # _LIQUIDITY_CHECKED    - false if we have yet to check liquidity for this token
     # _INFORMED_SELL        - set to true when we've already informed the user that we're selling this position
     # _LIQUIDITY_READY      - a flag to test if we've found liquidity for this pair
     # _LIQUIDITY_CHECKED    - a flag to test if we've check for the amount of liquidity for this pair
@@ -2523,6 +2523,7 @@ def run():
     
     # Price Quote
     quote = 0
+    reload_token_file = False
 
     if command_line_args.cooldown is not None:
         bot_too_fast_cooldown = command_line_args.cooldown
@@ -2593,8 +2594,7 @@ def run():
 
         loopcheck_timestamp = 0
         loopcheck_nextcheck = 0
-        loopcheck_stdout = "Calculating"
-        loopcheck_checkfrequency = 300
+        loopcheck_checkfrequency = 10
 
         while True:
 
@@ -2603,7 +2603,8 @@ def run():
                 modification_check = tokens_file_modified_time
                 tokens_file_modified_time = os.path.getmtime(command_line_args.tokens)
                 if (modification_check != tokens_file_modified_time):
-                    raise Exception("tokens.json has been changed, reinitializing tokens.")
+                    reload_tokens_file = True
+                    raise Exception("tokens.json has been changed, reloading.")
             else:
                 load_token_file_increment = load_token_file_increment + 1
 
@@ -2621,14 +2622,19 @@ def run():
                 elif loopcheck_timestamp != 0 and loopcheck_nextcheck == 0:
                     # When we are keeping track of time and next check is 0, we're ready to calculate queries per second
                     loop_time = (time() - loopcheck_timestamp) / loopcheck_checkfrequency
-                    loopcheck_stdout = format(1 / loop_time, '.1f')
+                    bot_settings['_QUERIES_PER_SECOND'] = str(format(1 / loop_time, '.1f'))
                     loopcheck_timestamp = 0
                     loopcheck_nextcheck = loopcheck_checkfrequency
 
                     # If the bot is doing more than 10 queries a second out of sonic mode, slow it down
-                    if loop_time < 0.1 and settings['USECUSTOMNODE'] == 'false':
-                        printt_info ("Bot is moving way too fast for a public node. Slowing down to approximately 10 queries per second.")
-                        bot_too_fast_cooldown = 0.1
+                    if loop_time < 0.09 and settings['USECUSTOMNODE'] == 'false':
+                        if bot_too_fast_cooldown == 0:
+                            printt_info ("Bot is moving way too fast for a public node. Slowing down to approximately 10 queries per second.")
+                            bot_too_fast_cooldown = 0.09
+                        elif bot_too_fast_cooldown > 0:
+                            printt_info ("Bot is still moving too fast for a public node. Slowing down a bit more.")
+                            bot_too_fast_cooldown = 0.025
+
 
 
                 if token['ENABLED'] == 'true':                   
@@ -2677,10 +2683,8 @@ def run():
                                         continue
 
                         except Exception:
-                            printt_repeating (token, token['SYMBOL'] + " - Waiting for liquidity to be added on exchange [" + str(loopcheck_stdout) + " queries/s]")
+                            printt_repeating (token, token['SYMBOL'] + " - Waiting for liquidity to be added on exchange [" + bot_settings['_QUERIES_PER_SECOND']  + " queries/s]")
                             continue
-
-
 
                     #
                     #  PRICE CHECK
@@ -2818,6 +2822,8 @@ def run():
             sleep(cooldown + bot_too_fast_cooldown)
 
     except Exception as ee:
+        if reload_tokens_file == True:
+            run()
         print(timestamp(), "ERROR. Please go to /log folder and open your error logs : you will find more details.")
         logging.exception(ee)
         logger1.exception(ee)
