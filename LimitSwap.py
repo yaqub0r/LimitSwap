@@ -1735,7 +1735,7 @@ def buy(token_dict, inToken, outToken):
 
     # Map variables until all code is cleaned up.
     amount = token_dict['BUYAMOUNTINBASE']
-    gas = token_dict['GAS']
+    gas = token_dict['_GAS_TO_USE']
     slippage = token_dict['SLIPPAGE']
     gaslimit = token_dict['GASLIMIT']
     boost = token_dict['BOOSTPERCENT']
@@ -1763,13 +1763,6 @@ def buy(token_dict, inToken, outToken):
 
 
 
-
-
-
-    if int(gaslimit) < 250000:
-        printt_info("Your GASLIMIT parameter is too low : LimitSwap has forced it to 300000 otherwise your transaction would fail for sure. We advise you to raise it to 1000000.")
-        gaslimit = 300000
-
     if custom.lower() == 'false':
         balance = Web3.fromWei(check_bnb_balance(), 'ether')
         base = base_symbol
@@ -1780,12 +1773,9 @@ def buy(token_dict, inToken, outToken):
         balance = balance_check / DECIMALS
 
     if balance > Decimal(amount):
-        if gas.lower() == 'boost':
-            gas_check = client.eth.gasPrice
-            gas_price = gas_check / 1000000000
-            gas = (gas_price * ((int(boost)) / 100)) + gas_price
-        else:
-            gas = int(gas)
+
+        calculate_gas(token_dict)
+        gas = token_dict['_GAS_TO_USE']
 
         gaslimit = int(gaslimit)
         slippage = int(slippage)
@@ -2069,7 +2059,7 @@ def sell(token_dict, inToken, outToken):
     # Map variables until all code is cleaned up.
     amount = token_dict['SELLAMOUNTINTOKENS']
     moonbag = token_dict['MOONBAG']
-    gas = token_dict['GAS']
+    gas = token_dict['_GAS_TO_USE']
     slippage = token_dict['SLIPPAGE']
     gaslimit = token_dict['GASLIMIT']
     boost = token_dict['BOOSTPERCENT']
@@ -2098,12 +2088,8 @@ def sell(token_dict, inToken, outToken):
 
     if balance >= Decimal(amount_check) and balance > 0.0000000000000001:
 
-        if gas.lower() == 'boost':
-            gas_check = client.eth.gasPrice
-            gas_price = gas_check / 1000000000
-            gas = (gas_price * ((int(boost) * 4) / 100)) + gas_price
-        else:
-            gas = int(gas)
+        calculate_gas(token_dict)
+        gas = token_dict['_GAS_TO_USE']
 
         slippage = int(slippage)
         gaslimit = int(gaslimit)
@@ -2537,7 +2523,7 @@ def run():
     
     # Price Quote
     quote = 0
-    reload_token_file = False
+    reload_tokens_file = False
 
     if command_line_args.cooldown is not None:
         bot_too_fast_cooldown = command_line_args.cooldown
@@ -2793,14 +2779,14 @@ def run():
                             printt_info("You own more tokens than your MAXTOKENS parameter for",token['SYMBOL'], " Looking to sell this position")
                             token['_INFORMED_SELL'] = True
 
+                        printt_sell_price (token, quote)
+
                         # Looking to dump this token as soon as it drops <PUMP> percentage from our gains
                         if  isinstance(command_line_args.pump, int) and command_line_args.pump > 0 :
                             
                             if token['_COST_PER_TOKEN'] == 0 and token['_INFORMED_SELL'] == False:
                                 printt_warn("WARNING: You are running a pump on an already purchased position.")
                                 sleep(5)
-
-                            printt_sell_price (token, quote)
 
                             maximum_gains = token['_ALL_TIME_HIGH'] - token['_COST_PER_TOKEN']
                             minimum_price = token['_ALL_TIME_HIGH'] - (command_line_args.pump * 0.01 * maximum_gains)
