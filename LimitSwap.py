@@ -119,9 +119,8 @@ def printt(*print_args, write_to_log=False):
     #
     # returns: nothing
 
-    print(timestamp(), ' '.join(map(str, print_args)))
-    
     if bot_settings['_NEED_NEW_LINE'] == True: print()
+    print(timestamp(), ' '.join(map(str, print_args)))
     if write_to_log == True:
         logging.info(' '.join(map(str,print_args)))
 
@@ -214,21 +213,6 @@ def printt_debug(*print_args, write_to_log=False):
     if write_to_log == True:
         logging.info(' '.join(map(str,print_args)))
 
-# def printt_buyprice(token_dict, token_price):
-#     Function: printt_buyprice
-#     --------------------
-#     Formatted buying information
-    
-#     token_dict - one element of the tokens{} dictionary
-#     token_price - the current price of the token we want to buy
-    
-#     returns: nothing
-
-#     print(timestamp(), 
-#             style.BLUE, token_dict['SYMBOL'], " Price ", token_Price, token.[],
-#              "//// your buyprice =", buypriceinbase, base,
-#                   "//// your sellprice =", sellpriceinbase, base, "//// your stoplossprice =", stoplosspriceinbase, base)
-
 def printt_repeating(token_dict, message, print_frequency=500):
     #     Function: printt_r
     #     --------------------
@@ -264,6 +248,7 @@ def printt_sell_price(token_dict, token_price):
     price_message = token_dict['SYMBOL'] + " Price:" + str(token_price) + " Buy:" + str(token_dict['BUYPRICEINBASE']) 
     price_message = price_message + " Sell:" + str(token_dict['SELLPRICEINBASE']) + " Stop:" + str(token_dict['STOPLOSSPRICEINBASE'])
     price_message = price_message + " ATH:" + str(token_dict['_ALL_TIME_HIGH']) + " ATL:" + str(token_dict['_ALL_TIME_LOW'])
+    price_message = price_message + " Queries/s: " + bot_settings['_QUERIES_PER_SECOND'] 
 
     if price_message == token_dict['_LAST_PRICE_MESSAGE'] and bot_settings['VERBOSE_PRICING'] == 'false':
         print (".", end='', flush=True)
@@ -332,11 +317,12 @@ def load_settings_file(settings_path, load_message=True):
     ]
 
     program_defined_values = {
-        '_NEED_NEW_LINE' : False
+        '_NEED_NEW_LINE' : False,
+        '_QUERIES_PER_SECOND' : 'Unknown'
     }
 
     for default_true in default_true_settings:
-        if default_true not in settings:
+        if default_true not in bot_settings:
             print(timestamp(),default_true, "not found in settings configuration file, settings a default value of false.")
             bot_settings[default_true] = "true"
         else:
@@ -390,6 +376,20 @@ def load_settings_file(settings_path, load_message=True):
             settings[required_setting] = settings[required_setting].lower()
 
     return bot_settings, settings
+
+def reload_bot_settings(bot_settings_dict):
+    # Function: reload_settings_file()
+    # ----------------------------
+    # Reloads and/or initializes settings that need to be updated when run is re-executed.
+    # See load_settings_file for the details of these attributes
+    #
+    program_defined_values = {
+        '_NEED_NEW_LINE' : False,
+        '_QUERIES_PER_SECOND' : 'Unknown'
+    }
+
+    for value in program_defined_values:
+        bot_settings_dict[value] = program_defined_values[value]
 
 def get_file_modified_time(file_path, last_known_modification=0):
     
@@ -458,7 +458,6 @@ def load_tokens_file(tokens_path, load_message=True):
     }
 
     # There are values that we will set internally. They must all begin with _
-    # _LIQUIDITY_CHECKED    - false if we have yet to check liquidity for this token
     # _INFORMED_SELL        - set to true when we've already informed the user that we're selling this position
     # _LIQUIDITY_READY      - a flag to test if we've found liquidity for this pair
     # _LIQUIDITY_CHECKED    - a flag to test if we've check for the amount of liquidity for this pair
@@ -1736,7 +1735,7 @@ def buy(token_dict, inToken, outToken):
 
     # Map variables until all code is cleaned up.
     amount = token_dict['BUYAMOUNTINBASE']
-    gas = token_dict['GAS']
+    gas = token_dict['_GAS_TO_USE']
     slippage = token_dict['SLIPPAGE']
     gaslimit = token_dict['GASLIMIT']
     boost = token_dict['BOOSTPERCENT']
@@ -1764,13 +1763,6 @@ def buy(token_dict, inToken, outToken):
 
 
 
-
-
-
-    if int(gaslimit) < 250000:
-        printt_info("Your GASLIMIT parameter is too low : LimitSwap has forced it to 300000 otherwise your transaction would fail for sure. We advise you to raise it to 1000000.")
-        gaslimit = 300000
-
     if custom.lower() == 'false':
         balance = Web3.fromWei(check_bnb_balance(), 'ether')
         base = base_symbol
@@ -1781,12 +1773,9 @@ def buy(token_dict, inToken, outToken):
         balance = balance_check / DECIMALS
 
     if balance > Decimal(amount):
-        if gas.lower() == 'boost':
-            gas_check = client.eth.gasPrice
-            gas_price = gas_check / 1000000000
-            gas = (gas_price * ((int(boost)) / 100)) + gas_price
-        else:
-            gas = int(gas)
+
+        calculate_gas(token_dict)
+        gas = token_dict['_GAS_TO_USE']
 
         gaslimit = int(gaslimit)
         slippage = int(slippage)
@@ -2070,7 +2059,7 @@ def sell(token_dict, inToken, outToken):
     # Map variables until all code is cleaned up.
     amount = token_dict['SELLAMOUNTINTOKENS']
     moonbag = token_dict['MOONBAG']
-    gas = token_dict['GAS']
+    gas = token_dict['_GAS_TO_USE']
     slippage = token_dict['SLIPPAGE']
     gaslimit = token_dict['GASLIMIT']
     boost = token_dict['BOOSTPERCENT']
@@ -2099,12 +2088,8 @@ def sell(token_dict, inToken, outToken):
 
     if balance >= Decimal(amount_check) and balance > 0.0000000000000001:
 
-        if gas.lower() == 'boost':
-            gas_check = client.eth.gasPrice
-            gas_price = gas_check / 1000000000
-            gas = (gas_price * ((int(boost) * 4) / 100)) + gas_price
-        else:
-            gas = int(gas)
+        calculate_gas(token_dict)
+        gas = token_dict['_GAS_TO_USE']
 
         slippage = int(slippage)
         gaslimit = int(gaslimit)
@@ -2538,6 +2523,7 @@ def run():
     
     # Price Quote
     quote = 0
+    reload_tokens_file = False
 
     if command_line_args.cooldown is not None:
         bot_too_fast_cooldown = command_line_args.cooldown
@@ -2608,8 +2594,7 @@ def run():
 
         loopcheck_timestamp = 0
         loopcheck_nextcheck = 0
-        loopcheck_stdout = "Calculating"
-        loopcheck_checkfrequency = 300
+        loopcheck_checkfrequency = 10
 
         while True:
 
@@ -2618,7 +2603,8 @@ def run():
                 modification_check = tokens_file_modified_time
                 tokens_file_modified_time = os.path.getmtime(command_line_args.tokens)
                 if (modification_check != tokens_file_modified_time):
-                    raise Exception("tokens.json has been changed, reinitializing tokens.")
+                    reload_tokens_file = True
+                    raise Exception("tokens.json has been changed, reloading.")
             else:
                 load_token_file_increment = load_token_file_increment + 1
 
@@ -2636,14 +2622,19 @@ def run():
                 elif loopcheck_timestamp != 0 and loopcheck_nextcheck == 0:
                     # When we are keeping track of time and next check is 0, we're ready to calculate queries per second
                     loop_time = (time() - loopcheck_timestamp) / loopcheck_checkfrequency
-                    loopcheck_stdout = format(1 / loop_time, '.1f')
+                    bot_settings['_QUERIES_PER_SECOND'] = str(format(1 / loop_time, '.1f'))
                     loopcheck_timestamp = 0
                     loopcheck_nextcheck = loopcheck_checkfrequency
 
                     # If the bot is doing more than 10 queries a second out of sonic mode, slow it down
-                    if loop_time < 0.1 and settings['USECUSTOMNODE'] == 'false':
-                        printt_info ("Bot is moving way too fast for a public node. Slowing down to approximately 10 queries per second.")
-                        bot_too_fast_cooldown = 0.1
+                    if loop_time < 0.09 and settings['USECUSTOMNODE'] == 'false':
+                        if bot_too_fast_cooldown == 0:
+                            printt_info ("Bot is moving way too fast for a public node. Slowing down to approximately 10 queries per second.")
+                            bot_too_fast_cooldown = 0.09
+                        elif bot_too_fast_cooldown > 0:
+                            printt_info ("Bot is still moving too fast for a public node. Slowing down a bit more.")
+                            bot_too_fast_cooldown = 0.025
+
 
 
                 if token['ENABLED'] == 'true':                   
@@ -2692,10 +2683,8 @@ def run():
                                         continue
 
                         except Exception:
-                            printt_repeating (token, token['SYMBOL'] + " - Waiting for liquidity to be added on exchange [" + str(loopcheck_stdout) + " queries/s]")
+                            printt_repeating (token, token['SYMBOL'] + " - Waiting for liquidity to be added on exchange [" + bot_settings['_QUERIES_PER_SECOND']  + " queries/s]")
                             continue
-
-
 
                     #
                     #  PRICE CHECK
@@ -2790,14 +2779,14 @@ def run():
                             printt_info("You own more tokens than your MAXTOKENS parameter for",token['SYMBOL'], " Looking to sell this position")
                             token['_INFORMED_SELL'] = True
 
+                        printt_sell_price (token, quote)
+
                         # Looking to dump this token as soon as it drops <PUMP> percentage from our gains
                         if  isinstance(command_line_args.pump, int) and command_line_args.pump > 0 :
                             
                             if token['_COST_PER_TOKEN'] == 0 and token['_INFORMED_SELL'] == False:
                                 printt_warn("WARNING: You are running a pump on an already purchased position.")
                                 sleep(5)
-
-                            printt_sell_price (token, quote)
 
                             maximum_gains = token['_ALL_TIME_HIGH'] - token['_COST_PER_TOKEN']
                             minimum_price = token['_ALL_TIME_HIGH'] - (command_line_args.pump * 0.01 * maximum_gains)
@@ -2833,6 +2822,9 @@ def run():
             sleep(cooldown + bot_too_fast_cooldown)
 
     except Exception as ee:
+        if reload_tokens_file == True:
+            reload_bot_settings(bot_settings)
+            run()
         print(timestamp(), "ERROR. Please go to /log folder and open your error logs : you will find more details.")
         logging.exception(ee)
         logger1.exception(ee)
