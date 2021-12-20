@@ -377,6 +377,20 @@ def load_settings_file(settings_path, load_message=True):
 
     return bot_settings, settings
 
+def reload_bot_settings(bot_settings_dict):
+    # Function: reload_settings_file()
+    # ----------------------------
+    # Reloads and/or initializes settings that need to be updated when run is re-executed.
+    # See load_settings_file for the details of these attributes
+    #
+    program_defined_values = {
+        '_NEED_NEW_LINE' : False,
+        '_QUERIES_PER_SECOND' : 'Unknown'
+    }
+
+    for value in program_defined_values:
+        bot_settings_dict[value] = program_defined_values[value]
+
 def get_file_modified_time(file_path, last_known_modification=0):
     
     modified_time = os.path.getmtime(file_path)
@@ -2823,6 +2837,7 @@ def run():
 
     except Exception as ee:
         if reload_tokens_file == True:
+            reload_bot_settings(bot_settings)
             run()
         print(timestamp(), "ERROR. Please go to /log folder and open your error logs : you will find more details.")
         logging.exception(ee)
