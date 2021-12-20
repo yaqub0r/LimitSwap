@@ -214,21 +214,6 @@ def printt_debug(*print_args, write_to_log=False):
     if write_to_log == True:
         logging.info(' '.join(map(str,print_args)))
 
-# def printt_buyprice(token_dict, token_price):
-#     Function: printt_buyprice
-#     --------------------
-#     Formatted buying information
-    
-#     token_dict - one element of the tokens{} dictionary
-#     token_price - the current price of the token we want to buy
-    
-#     returns: nothing
-
-#     print(timestamp(), 
-#             style.BLUE, token_dict['SYMBOL'], " Price ", token_Price, token.[],
-#              "//// your buyprice =", buypriceinbase, base,
-#                   "//// your sellprice =", sellpriceinbase, base, "//// your stoplossprice =", stoplosspriceinbase, base)
-
 def printt_repeating(token_dict, message, print_frequency=500):
     #     Function: printt_r
     #     --------------------
@@ -251,7 +236,6 @@ def printt_repeating(token_dict, message, print_frequency=500):
     
     token_dict['_LAST_MESSAGE'] = message
     
-
 def printt_sell_price(token_dict, token_price):
     #     Function: printt_buyprice
     #     --------------------
@@ -277,6 +261,18 @@ def printt_sell_price(token_dict, token_price):
         printt (price_message)
     
     token_dict['_LAST_PRICE_MESSAGE'] = price_message
+
+def printt_buy_price(token_dict, token_price):
+    #     Function: printt_buy_price
+    #     --------------------
+    #     Formatted buying information
+    #        
+    #     token_dict - one element of the tokens{} dictionary
+    #     token_price - the current price of the token we want to buy
+    #   
+    #     returns: nothing
+
+    printt_sell_price(token_dict, token_price)
 
 def load_settings_file(settings_path, load_message=True):
     # Function: load_settings_file
@@ -2694,6 +2690,11 @@ def run():
                     
                     elif quote < token['_ALL_TIME_LOW']:
                         token['_ALL_TIME_LOW'] = quote
+
+
+                    # If we're still in the market to buy tokens, the print the buy message
+                    if quote != 0 and token['_REACHED_MAX_TOKENS'] == False:
+                        printt_buy_price(token, quote)
 
                     #
                     # BUY CHECK
