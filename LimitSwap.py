@@ -264,10 +264,10 @@ def printt_sell_price(token_dict, token_price):
         price_message = token_dict['SYMBOL'] + " Price: " + "{0:.24f}".format(token_price) + " " + base_symbol + " - Buy:" + str(token_dict['BUYPRICEINBASE'])
     
     else:
-        price_message = token_dict['SYMBOL'] + " Price:" + "{0:.24f}".format(token_price) + " " + token_dict['BASESYMBOL'] + " Buy:" + str(token_dict['BUYPRICEINBASE'])
+        price_message = token_dict['SYMBOL'] + " Price:" + "{0:.24f}".format(token_price) + " " + token_dict['BASESYMBOL'] + " - Buy:" + str(token_dict['BUYPRICEINBASE'])
         
-    price_message = price_message + " - Sell:" + str(token_dict['SELLPRICEINBASE']) + " - Stop:" + str(token_dict['STOPLOSSPRICEINBASE'])
-    price_message = price_message + " - ATH:" + "{0:.24f}".format(token_dict['_ALL_TIME_HIGH']) + " - ATL:" + "{0:.24f}".format(token_dict['_ALL_TIME_LOW'])
+    price_message = price_message + " Sell:" + str(token_dict['SELLPRICEINBASE']) + " Stop:" + str(token_dict['STOPLOSSPRICEINBASE'])
+    price_message = price_message + " ATH:" + "{0:.24f}".format(token_dict['_ALL_TIME_HIGH']) + " ATL:" + "{0:.24f}".format(token_dict['_ALL_TIME_LOW'])
 
     if price_message == token_dict['_LAST_PRICE_MESSAGE'] and bot_settings['VERBOSE_PRICING'] == 'false':
         print (".", end='', flush=True)
