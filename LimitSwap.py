@@ -1381,7 +1381,7 @@ def approve(address, amount):
 
     eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
-    if eth_balance > 0.000005:
+    if eth_balance > 0.05:
         print("Estimating Gas Cost Using Web3")
         if settings['EXCHANGE'] == 'uniswap':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
@@ -2643,7 +2643,7 @@ def run():
 
         eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
-        if eth_balance < 0.00005:
+        if eth_balance < 0.05:
             printt_err("You have less than 0.05 ETH/BNB/FTM/MATIC/Etc. token in your wallet, bot needs at least 0.05 to cover fees : please add some more in your wallet")
             sleep(10)
             exit(1)
@@ -2933,7 +2933,7 @@ try:
     parse_wallet_settings(settings, userpassword)
 
     # The LIMIT balance of the user.
-    true_balance = 100
+    true_balance = auth()
 
     # I removed the lines below because we don't use releases much anymore
     # -------------------------
