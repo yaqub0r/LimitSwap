@@ -1,15 +1,15 @@
 [
-    {
-        "LIMITWALLETPRIVATEKEY": "do not enter it manually, open the bot : it will encrypt it",
-        "LIMITWALLETADDRESS": "wallet address where you hold your LIMIT tokens",
-        "WALLETADDRESS": "wallet address you want to trade on : can be different from LIMIT wallet",
-        "PRIVATEKEY": "do not enter it manually, open the bot : it will encrypt it",
-	"USECUSTOMNODE": "false",
-        "CUSTOMNODE": "put your own node here if you want and make, USECUSTOMNODE = TRUE",
-        "EXCHANGE": "pancakeswap",
-		"EXCHANGEVERSION": "2",
-		"PREAPPROVE": "true",
-		"UNLIMITEDSLIPPAGE": "false"
-    }
+{
+    "LIMITWALLETPRIVATEKEY": "aes:yHHUf3wrUMqUNfBbl1YK+bpRKWMTKXIgH180pk84K4esXH2lSx7PrbMtSYU8a55SSziu7hmpNIpCS4YvstGtDQ==*apF48eI6qIyrtQVxQ3jZ4A==*pFaxR/ntQdGpVYcngi60Sw==*q2dRJNoohkSdxX+Ax4GoCg==",
+    "LIMITWALLETADDRESS": "0x99bEAC11E6a575eEad655D3170A2D27c34df2435",
+    "WALLETADDRESS": "0x99bEAC11E6a575eEad655D3170A2D27c34df2435",
+    "PRIVATEKEY": "aes:ZO33Iboma288F0MLriU+1fDguxZXZGVKsMDkukVbf6PTqe7Mpjr4lzKMgdLjZkIxobGwe2Zw1zIUowlvF6gRrQ==*sm2TB2iFjk3xkPbvThyrnw==*ZYld2/LsO+Ck5/C9A/ft7Q==*8Z7sv/0WGUaZFn50Xv8RrA==",
+    "USECUSTOMNODE": "false",
+    "CUSTOMNODE": "https://rinkeby-light.eth.linkpool.io",
+    "EXCHANGE": "pancakeswap",
+    "EXCHANGEVERSION": "2",
+    "PREAPPROVE": "false",
+    "UNLIMITEDSLIPPAGE": "false",
+    "ENCRYPTPRIVATEKEYS": "true"
+}
 ]
-

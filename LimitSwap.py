@@ -260,7 +260,7 @@ def printt_sell_price(token_dict, token_price):
     #
     #     returns: nothing
 
-    price_message = token_dict['SYMBOL'] + " Price:" + str(token_price) + " Buy:" + str(token_dict['BUYPRICEINBASE'])
+    price_message = token_dict['SYMBOL'] + " Price:" + "{0:.24f}".format(token_price) + " Buy:" + str(token_dict['BUYPRICEINBASE'])
     price_message = price_message + " Sell:" + str(token_dict['SELLPRICEINBASE']) + " Stop:" + str(token_dict['STOPLOSSPRICEINBASE'])
     price_message = price_message + " ATH:" + str(token_dict['_ALL_TIME_HIGH']) + " ATL:" + str(token_dict['_ALL_TIME_LOW'])
 
