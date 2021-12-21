@@ -1359,7 +1359,7 @@ def auth():
     try:
         decode = decode_key()
     except Exception:
-        print("There is a problem with your private key : please check if it's correct. Don't enter seed phrase !")
+        print("There is a problem with your private key: please check if it's correct. Don't enter seed phrase !")
         logging.info(
             "There is a problem with your private key : please check if it's correct. Don't enter seed phrase !")
 
