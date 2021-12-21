@@ -2644,7 +2644,7 @@ def run():
         eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
         if eth_balance < 0.05:
-            printt_err("You have less than 0.05 ETH/BNB/FTM/MATIC/Etc. token in your wallet, bot needs at least 0.05 to cover fees : please add some more in your wallet")
+            printt_err("You have less than 0.05 ETH/BNB/FTM/MATIC/etc. token in your wallet, bot needs at least 0.05 to cover fees : please add some more in your wallet")
             sleep(10)
             exit(1)
 
