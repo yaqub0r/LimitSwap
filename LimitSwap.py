@@ -2899,8 +2899,17 @@ def run():
         tokens_file_modified_time = os.path.getmtime(command_line_args.tokens)
 
         if token['WAIT_FOR_OPEN_TRADE'].lower() == 'true':
+            printt_info("-----------------------------------------------------------------------------------------------------------------------------")
             printt_info("WAIT_FOR_OPEN_TRADE = true --> Bot will wait for price to move before making a BUY order")
-
+            printt_info(" ")
+            printt_err("BE CAREFUL:")
+            printt_err("to make WAIT_FOR_OPEN_TRADE work, you need to snipe on the same liquidity pair that liquidity added by the team:")
+            printt_info(" ")
+            printt_info("Example : If you try to snipe in BUSD and liquidity is in BNB, price will move because of price movement between BUSD and BNB")
+            printt_info("--> if liquidity is in BNB or ETH, use LIQUIDITYINNATIVETOKEN = true and USECUSTOMBASEPAIR = false")
+            printt_info("------------------------------------------------------------------------------------------------------------------------------")
+            sleep(10)
+        
         while True:
 
             # Check to see if the tokens file has changed every 10 iterations
