@@ -1317,57 +1317,69 @@ def parse_wallet_settings(settings, pwd):
         if " " in settings['PRIVATEKEY1'] or settings['PRIVATEKEY1'] == "null":
             settings_changed = True
             settings['PRIVATEKEY1'] = input("Please provide the 2nd private key for the 2nd trading wallet: ")
-
+        stoptheprocess = 0
+    else:
+        stoptheprocess = 1
+        
     # add of 3nd wallet
-    decision = ""
-    while decision != "y" and decision != "n":
-        decision = input(style.BLUE + "\nWould you like to a 3rd wallet to use MULTIPLEBUYS feature ? (y/n): ")
-
-    if decision == "y":
-        print(style.RESET + " ")
-        # Check for trading wallet information
-        if " " in settings['WALLETADDRESS2'] or settings['WALLETADDRESS2'] == "null":
-            settings_changed = True
-            settings['WALLETADDRESS2'] = input("Please provide the 3rd trading wallet address: ")
-
-        # Check for trading wallet private key
-        if " " in settings['PRIVATEKEY2'] or settings['PRIVATEKEY2'] == "null":
-            settings_changed = True
-            settings['PRIVATEKEY2'] = input("Please provide the 3rd private key for the 3rd trading wallet: ")
+    if stoptheprocess != 1:
+        decision = ""
+        while decision != "y" and decision != "n":
+            decision = input(style.BLUE + "\nWould you like to a 3rd wallet to use MULTIPLEBUYS feature ? (y/n): ")
+    
+        if decision == "y":
+            print(style.RESET + " ")
+            # Check for trading wallet information
+            if " " in settings['WALLETADDRESS2'] or settings['WALLETADDRESS2'] == "null":
+                settings_changed = True
+                settings['WALLETADDRESS2'] = input("Please provide the 3rd trading wallet address: ")
+    
+            # Check for trading wallet private key
+            if " " in settings['PRIVATEKEY2'] or settings['PRIVATEKEY2'] == "null":
+                settings_changed = True
+                settings['PRIVATEKEY2'] = input("Please provide the 3rd private key for the 3rd trading wallet: ")
+            stoptheprocess = 0
+        else:
+            stoptheprocess = 1
 
     # add of 4th wallet
-    decision = ""
-    while decision != "y" and decision != "n":
-        decision = input(style.BLUE + "\nWould you like to a 4th wallet to use MULTIPLEBUYS feature ? (y/n): ")
-
-    if decision == "y":
-        print(style.RESET + " ")
-        # Check for trading wallet information
-        if " " in settings['WALLETADDRESS3'] or settings['WALLETADDRESS3'] == "null":
-            settings_changed = True
-            settings['WALLETADDRESS3'] = input("Please provide the 4th trading wallet address: ")
-
-        # Check for trading wallet private key
-        if " " in settings['PRIVATEKEY3'] or settings['PRIVATEKEY3'] == "null":
-            settings_changed = True
-            settings['PRIVATEKEY3'] = input("Please provide the 4th private key for the 4th trading wallet: ")
+    if stoptheprocess != 1:
+        decision = ""
+        while decision != "y" and decision != "n":
+            decision = input(style.BLUE + "\nWould you like to a 4th wallet to use MULTIPLEBUYS feature ? (y/n): ")
+    
+        if decision == "y":
+            print(style.RESET + " ")
+            # Check for trading wallet information
+            if " " in settings['WALLETADDRESS3'] or settings['WALLETADDRESS3'] == "null":
+                settings_changed = True
+                settings['WALLETADDRESS3'] = input("Please provide the 4th trading wallet address: ")
+    
+            # Check for trading wallet private key
+            if " " in settings['PRIVATEKEY3'] or settings['PRIVATEKEY3'] == "null":
+                settings_changed = True
+                settings['PRIVATEKEY3'] = input("Please provide the 4th private key for the 4th trading wallet: ")
+            stoptheprocess = 0
+        else:
+            stoptheprocess = 1
 
     # add of 5th wallet
-    decision = ""
-    while decision != "y" and decision != "n":
-        decision = input(style.BLUE + "\nWould you like to a 5th wallet to use MULTIPLEBUYS feature ? (y/n): ")
-
-    if decision == "y":
-        print(style.RESET + " ")
-        # Check for trading wallet information
-        if " " in settings['WALLETADDRESS4'] or settings['WALLETADDRESS4'] == "null":
-            settings_changed = True
-            settings['WALLETADDRESS4'] = input("Please provide the 5th trading wallet address: ")
-
-        # Check for trading wallet private key
-        if " " in settings['PRIVATEKEY4'] or settings['PRIVATEKEY4'] == "null":
-            settings_changed = True
-            settings['PRIVATEKEY4'] = input("Please provide the 5th private key for the 5th trading wallet: ")
+    if stoptheprocess != 1:
+        decision = ""
+        while decision != "y" and decision != "n":
+            decision = input(style.BLUE + "\nWould you like to a 5th wallet to use MULTIPLEBUYS feature ? (y/n): ")
+    
+        if decision == "y":
+            print(style.RESET + " ")
+            # Check for trading wallet information
+            if " " in settings['WALLETADDRESS4'] or settings['WALLETADDRESS4'] == "null":
+                settings_changed = True
+                settings['WALLETADDRESS4'] = input("Please provide the 5th trading wallet address: ")
+    
+            # Check for trading wallet private key
+            if " " in settings['PRIVATEKEY4'] or settings['PRIVATEKEY4'] == "null":
+                settings_changed = True
+                settings['PRIVATEKEY4'] = input("Please provide the 5th private key for the 5th trading wallet: ")
 
 
     if settings_changed == True:
@@ -1441,9 +1453,7 @@ def auth():
     try:
         decode = decode_key()
     except Exception:
-        print("There is a problem with your private key : please check if it's correct. Don't enter seed phrase !")
-        logging.info(
-            "There is a problem with your private key : please check if it's correct. Don't enter seed phrase !")
+        printt_err("There is a problem with your private key : please check if it's correct. Don't enter seed phrase !")
 
     wallet_address = Web3.toChecksumAddress(decode)
     balance = balanceContract.functions.balanceOf(wallet_address).call()
