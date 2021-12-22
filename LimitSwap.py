@@ -2897,6 +2897,10 @@ def run():
 
         load_token_file_increment = 0
         tokens_file_modified_time = os.path.getmtime(command_line_args.tokens)
+
+        if token['WAIT_FOR_OPEN_TRADE'].lower() == 'true':
+            printt_info("WAIT_FOR_OPEN_TRADE = true --> Bot will wait for price to move before making a BUY order")
+
         while True:
 
             # Check to see if the tokens file has changed every 10 iterations
