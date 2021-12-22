@@ -2907,6 +2907,8 @@ def run():
             printt_info(" ")
             printt_info("Example : If you try to snipe in BUSD and liquidity is in BNB, price will move because of price movement between BUSD and BNB")
             printt_info("--> if liquidity is in BNB or ETH, use LIQUIDITYINNATIVETOKEN = true and USECUSTOMBASEPAIR = false")
+            printt_info(" ")
+            printt_info("This message will be displayed during 10s before bot starts")
             printt_info("------------------------------------------------------------------------------------------------------------------------------")
             sleep(10)
         
