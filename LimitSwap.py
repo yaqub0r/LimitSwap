@@ -50,6 +50,8 @@ import signal
 #
 # Global used for printt_repeating to track how many repeated messages have been printed to console
 repeated_message_quantity = 0
+# Global used to determine when trading has started (= OpenTrading is On)
+trading_is_on = False
 
 # color styles
 class style():  # Class of different text colours - default is white
@@ -259,7 +261,12 @@ def printt_sell_price(token_dict, token_price):
     #     token_price - the current price of the token we want to buy
     #
     #     returns: nothing
+    
+    global trading_is_on
+    printt_debug("trading_is_on 266:", trading_is_on)
+    printt_debug("_PREVIOUS_QUOTE 266:", token_dict['_PREVIOUS_QUOTE'])
 
+    
     if token_dict['USECUSTOMBASEPAIR'] == 'false':
         price_message = token_dict['SYMBOL'] + " Price: " + "{0:.24f}".format(token_price) + " " + base_symbol + " - Buy:" + str(token_dict['BUYPRICEINBASE'])
     
@@ -274,8 +281,10 @@ def printt_sell_price(token_dict, token_price):
         bot_settings['_NEED_NEW_LINE'] = True
     elif token_price > token_dict['_PREVIOUS_QUOTE']:
         printt_ok (price_message)
+        trading_is_on = True
     elif token_price < token_dict['_PREVIOUS_QUOTE']:
         printt_err (price_message)
+        trading_is_on = True
     else:
         printt (price_message)
     
@@ -2951,7 +2960,7 @@ def run():
                     #    need to use later
                     #
                     token['_PREVIOUS_QUOTE'] = quote
-                    quote = check_price2(inToken, outToken, token['SYMBOL'], token['BASESYMBOL'],
+                    quote = check_price(inToken, outToken, token['SYMBOL'], token['BASESYMBOL'],
                                        token['USECUSTOMBASEPAIR'], token['LIQUIDITYINNATIVETOKEN'],
                                        token['BUYPRICEINBASE'], token['SELLPRICEINBASE'], token['STOPLOSSPRICEINBASE'])
                     
@@ -2967,7 +2976,8 @@ def run():
 
 
                     # If we're still in the market to buy tokens, the print the buy message
-                    if quote != 0 and token['_REACHED_MAX_TOKENS'] == False:
+                    # added the condition "if token['_PREVIOUS_QUOTE'] != 0" to avoid having a green line in first position and make trading_is_on work
+                    if token['_PREVIOUS_QUOTE'] != 0 and quote != 0 and token['_REACHED_MAX_TOKENS'] == False:
                         printt_buy_price(token, quote)
 
                     #
@@ -2975,8 +2985,22 @@ def run():
                     #   If the liquidity check has returned a quote that is less than our BUYPRICEINBASE and we haven't informrmed
                     #   the user that we've reached the maximum number of tokens, check for other criteria to buy.
                     #
+                    
                     if quote != 0 and quote < Decimal(token['BUYPRICEINBASE']) and token['_REACHED_MAX_TOKENS'] == False:
+    
+                        #
+                        # OPEN TRADE CHECK
+                        #   If the option is selected, bot wait for trading_is_on == True to create a BUY order
+                        #
+
+                        if token['WAIT_FOR_OPEN_TRADE'].lower() == 'true' and trading_is_on == True:
+                            printt_info("PRICE HAS MOVED --> trading is enabled --> Bot will buy")
+                            pass
                         
+                        if token['WAIT_FOR_OPEN_TRADE'].lower() == 'true' and trading_is_on == False:
+                            printt_debug("waiting for open trade")
+                            break
+                            
                         #
                         # PURCHASE POSITION
                         #   If we've passed all checks, attempt to purchase the token
