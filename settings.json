@@ -13,7 +13,7 @@
 "WALLETADDRESS4": "null",
 "PRIVATEKEY4": "null",
 "USECUSTOMNODE": "false",
-	"CUSTOMNODE": "put your own node here if you want and set USECUSTOMNODE = TRUE",
+	"CUSTOMNODE": "put your own node here if you want and set USECUSTOMNODE = true",
 "EXCHANGE": "pancakeswap",
 	"EXCHANGEVERSION": "2",
 "PREAPPROVE": "true",
