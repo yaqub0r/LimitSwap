@@ -1225,9 +1225,16 @@ interpretations = {
 def save_settings(settings, pwd):
     if len(pwd) > 0:
         encrypted_settings = settings.copy()
-        encrypted_settings['LIMITWALLETPRIVATEKEY'] = 'aes:' + cryptocode.encrypt(settings['LIMITWALLETPRIVATEKEY'],
-                                                                                  pwd)
+        encrypted_settings['LIMITWALLETPRIVATEKEY'] = 'aes:' + cryptocode.encrypt(settings['LIMITWALLETPRIVATEKEY'], pwd)
         encrypted_settings['PRIVATEKEY'] = 'aes:' + cryptocode.encrypt(settings['PRIVATEKEY'], pwd)
+        if settings['PRIVATEKEY1'] != 'null':
+            encrypted_settings['PRIVATEKEY1'] = 'aes:' + cryptocode.encrypt(settings['PRIVATEKEY1'], pwd)
+        if settings['PRIVATEKEY2'] != 'null':
+            encrypted_settings['PRIVATEKEY2'] = 'aes:' + cryptocode.encrypt(settings['PRIVATEKEY2'], pwd)
+        if settings['PRIVATEKEY3'] != 'null':
+            encrypted_settings['PRIVATEKEY3'] = 'aes:' + cryptocode.encrypt(settings['PRIVATEKEY3'], pwd)
+        if settings['PRIVATEKEY4'] != 'null':
+            encrypted_settings['PRIVATEKEY4'] = 'aes:' + cryptocode.encrypt(settings['PRIVATEKEY4'], pwd)
 
     # TODO: MASSAGE OUTPUT - LimitSwap currently loads settings.json as a [0] element, so we need to massage our
     #                  settings.json output so that it's reasable. This should probably be fixed by us importing
@@ -1289,10 +1296,79 @@ def parse_wallet_settings(settings, pwd):
         settings['PRIVATEKEY'] = input("Please provide the private key for the wallet you want to trade with: ")
 
     # If the trading wallet private key is already set and encrypted, decrypt it
-    #elif settings['PRIVATEKEY'].startswith('aes:'):
-    #    print(timestamp(), "Decrypting limit wallet private key.")
-    #    settings['PRIVATEKEY'] = settings['PRIVATEKEY'].replace('aes:', "", 1)
-    #    settings['PRIVATEKEY'] = cryptocode.decrypt(settings['PRIVATEKEY'], pwd)
+    elif settings['PRIVATEKEY'].startswith('aes:'):
+        print(timestamp(), "Decrypting limit wallet private key.")
+        settings['PRIVATEKEY'] = settings['PRIVATEKEY'].replace('aes:', "", 1)
+        settings['PRIVATEKEY'] = cryptocode.decrypt(settings['PRIVATEKEY'], pwd)
+
+    # add of 2nd wallet
+    decision = ""
+    while decision != "y" and decision != "n":
+        decision = input(style.BLUE + "\nWould you like to a 2nd wallet to use MULTIPLEBUYS feature ? (y/n): ")
+
+    if decision == "y":
+        print(style.RESET + " ")
+        # Check for trading wallet information
+        if " " in settings['WALLETADDRESS1'] or settings['WALLETADDRESS1'] == "null":
+            settings_changed = True
+            settings['WALLETADDRESS1'] = input("Please provide the 2nd trading wallet address: ")
+
+        # Check for trading wallet private key
+        if " " in settings['PRIVATEKEY1'] or settings['PRIVATEKEY1'] == "null":
+            settings_changed = True
+            settings['PRIVATEKEY1'] = input("Please provide the 2nd private key for the 2nd trading wallet: ")
+
+    # add of 3nd wallet
+    decision = ""
+    while decision != "y" and decision != "n":
+        decision = input(style.BLUE + "\nWould you like to a 3rd wallet to use MULTIPLEBUYS feature ? (y/n): ")
+
+    if decision == "y":
+        print(style.RESET + " ")
+        # Check for trading wallet information
+        if " " in settings['WALLETADDRESS2'] or settings['WALLETADDRESS2'] == "null":
+            settings_changed = True
+            settings['WALLETADDRESS2'] = input("Please provide the 3rd trading wallet address: ")
+
+        # Check for trading wallet private key
+        if " " in settings['PRIVATEKEY2'] or settings['PRIVATEKEY2'] == "null":
+            settings_changed = True
+            settings['PRIVATEKEY2'] = input("Please provide the 3rd private key for the 3rd trading wallet: ")
+
+    # add of 4th wallet
+    decision = ""
+    while decision != "y" and decision != "n":
+        decision = input(style.BLUE + "\nWould you like to a 4th wallet to use MULTIPLEBUYS feature ? (y/n): ")
+
+    if decision == "y":
+        print(style.RESET + " ")
+        # Check for trading wallet information
+        if " " in settings['WALLETADDRESS3'] or settings['WALLETADDRESS3'] == "null":
+            settings_changed = True
+            settings['WALLETADDRESS3'] = input("Please provide the 4th trading wallet address: ")
+
+        # Check for trading wallet private key
+        if " " in settings['PRIVATEKEY3'] or settings['PRIVATEKEY3'] == "null":
+            settings_changed = True
+            settings['PRIVATEKEY3'] = input("Please provide the 4th private key for the 4th trading wallet: ")
+
+    # add of 5th wallet
+    decision = ""
+    while decision != "y" and decision != "n":
+        decision = input(style.BLUE + "\nWould you like to a 5th wallet to use MULTIPLEBUYS feature ? (y/n): ")
+
+    if decision == "y":
+        print(style.RESET + " ")
+        # Check for trading wallet information
+        if " " in settings['WALLETADDRESS4'] or settings['WALLETADDRESS4'] == "null":
+            settings_changed = True
+            settings['WALLETADDRESS4'] = input("Please provide the 5th trading wallet address: ")
+
+        # Check for trading wallet private key
+        if " " in settings['PRIVATEKEY4'] or settings['PRIVATEKEY4'] == "null":
+            settings_changed = True
+            settings['PRIVATEKEY4'] = input("Please provide the 5th private key for the 5th trading wallet: ")
+
 
     if settings_changed == True:
         save_settings(settings, pwd)
