@@ -1656,40 +1656,6 @@ def get_tokens_purchased(tx_hash):
     exit(0)
 
 
-def signed_txn_with_number(token_dict, transaction, buynumber, pwd):
-    # Choose proper private key.
-    printt_debug("ENTER signed_txn_with_number")
-    printt_debug("buynumber:", buynumber)
-
-    if buynumber == 0:
-        settings['PRIVATEKEY'] = settings['PRIVATEKEY'].replace('aes:', "", 1)
-        settings['PRIVATEKEY'] = cryptocode.decrypt(settings['PRIVATEKEY'], pwd)
-        printt_debug("settings['PRIVATEKEY']:", settings['PRIVATEKEY'])
-        signed_txn = client.eth.account.signTransaction(transaction, private_key=settings['PRIVATEKEY'])
-    if buynumber == 1:
-        settings['PRIVATEKEY1'] = settings['PRIVATEKEY1'].replace('aes:', "", 1)
-        settings['PRIVATEKEY1'] = cryptocode.decrypt(settings['PRIVATEKEY1'], pwd)
-        printt_debug("settings['PRIVATEKEY1']:", settings['PRIVATEKEY1'])
-        signed_txn = client.eth.account.signTransaction(transaction, private_key=settings['PRIVATEKEY1'])
-    if buynumber == 2:
-        settings['PRIVATEKEY2'] = settings['PRIVATEKEY2'].replace('aes:', "", 1)
-        settings['PRIVATEKEY2'] = cryptocode.decrypt(settings['PRIVATEKEY2'], pwd)
-        printt_debug("settings['PRIVATEKEY2']:", settings['PRIVATEKEY2'])
-        signed_txn = client.eth.account.signTransaction(transaction, private_key=settings['PRIVATEKEY2'])
-    if buynumber == 3:
-        settings['PRIVATEKEY3'] = settings['PRIVATEKEY3'].replace('aes:', "", 1)
-        settings['PRIVATEKEY3'] = cryptocode.decrypt(settings['PRIVATEKEY3'], pwd)
-        printt_debug("settings['PRIVATEKEY3']:", settings['PRIVATEKEY3'])
-        signed_txn = client.eth.account.signTransaction(transaction, private_key=settings['PRIVATEKEY3'])
-    if buynumber == 4:
-        settings['PRIVATEKEY4'] = settings['PRIVATEKEY4'].replace('aes:', "", 1)
-        settings['PRIVATEKEY4'] = cryptocode.decrypt(settings['PRIVATEKEY4'], pwd)
-        printt_debug("settings['PRIVATEKEY4']:", settings['PRIVATEKEY4'])
-        signed_txn = client.eth.account.signTransaction(transaction, private_key=settings['PRIVATEKEY4'])
-        
-    return signed_txn
-
-
 def check_liquidity(token):
     # Function: check_liquidity
     # ----------------------------
