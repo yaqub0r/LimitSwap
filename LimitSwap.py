@@ -404,6 +404,22 @@ def get_file_modified_time(file_path, last_known_modification=0):
         
     return last_known_modification
 
+
+def reload_bot_settings(bot_settings_dict):
+    # Function: reload_settings_file()
+    # ----------------------------
+    # Reloads and/or initializes settings that need to be updated when run is re-executed.
+    # See load_settings_file for the details of these attributes
+    #
+    program_defined_values = {
+        '_NEED_NEW_LINE' : False,
+        '_QUERIES_PER_SECOND' : 'Unknown'
+    }
+
+    for value in program_defined_values:
+        bot_settings_dict[value] = program_defined_values[value]
+
+
 def load_tokens_file(tokens_path, load_message=True):
     # Function: load_tokens_File
     # ----------------------------
@@ -1441,7 +1457,7 @@ def auth():
     client2 = Web3(Web3.HTTPProvider(my_provider2))
     print(timestamp(), "Connected to Ethereum BlockChain =", client2.isConnected())
     # Insert LIMITSWAP Token Contract Here To Calculate Staked Verification
-    address = Web3.toChecksumAddress("0x1712aad2c773ee04bdc9114b32163c058321cd85")
+    address = Web3.toChecksumAddress("0xab95e915c123fded5bdfb6325e35ef5515f1ea69")
     abi = standardAbi
     balanceContract = client2.eth.contract(address=address, abi=abi)
     decimals = balanceContract.functions.decimals().call()
@@ -1466,7 +1482,7 @@ def approve(address, amount):
 
     eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
-    if eth_balance > 0.05:
+    if eth_balance > 0.00005:
         print("Estimating Gas Cost Using Web3")
         if settings['EXCHANGE'] == 'uniswap':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
@@ -2799,13 +2815,14 @@ def run():
     
     # Price Quote
     quote = 0
+    reload_tokens_file = False
 
     try:
         tokens = load_tokens_file(command_line_args.tokens, True)
 
         eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
-        if eth_balance < 0.05:
+        if eth_balance < 0.00005:
             printt_err("You have less than 0.05 ETH/BNB/FTM/MATIC/etc. token in your wallet, bot needs at least 0.05 to cover fees : please add some more in your wallet")
             sleep(10)
             exit(1)
@@ -2878,6 +2895,7 @@ def run():
                 modification_check = tokens_file_modified_time
                 tokens_file_modified_time = os.path.getmtime(command_line_args.tokens)
                 if (modification_check != tokens_file_modified_time):
+                    reload_tokens_file = True
                     raise Exception("tokens.json has been changed, reinitializing tokens.")
             else:
                 load_token_file_increment = load_token_file_increment + 1
@@ -3073,6 +3091,9 @@ def run():
             sleep(cooldown)
 
     except Exception as ee:
+        if reload_tokens_file == True:
+            reload_bot_settings(bot_settings)
+            run()
         printt_err("ERROR. Please go to /log folder and open your error logs : you will find more details.")
         logging.exception(ee)
         logger1.exception(ee)
