@@ -1295,31 +1295,29 @@ def parse_wallet_settings(settings, pwd):
         settings_changed = True
         settings['PRIVATEKEY'] = input("Please provide the private key for the wallet you want to trade with: ")
 
-    # If the trading wallet private key is already set and encrypted, decrypt it
-    elif settings['PRIVATEKEY'].startswith('aes:'):
-        print(timestamp(), "Decrypting limit wallet private key.")
-        settings['PRIVATEKEY'] = settings['PRIVATEKEY'].replace('aes:', "", 1)
-        settings['PRIVATEKEY'] = cryptocode.decrypt(settings['PRIVATEKEY'], pwd)
-
     # add of 2nd wallet
-    decision = ""
-    while decision != "y" and decision != "n":
-        decision = input(style.BLUE + "\nWould you like to a 2nd wallet to use MULTIPLEBUYS feature ? (y/n): ")
-
-    if decision == "y":
-        print(style.RESET + " ")
-        # Check for trading wallet information
-        if " " in settings['WALLETADDRESS1'] or settings['WALLETADDRESS1'] == "null":
-            settings_changed = True
-            settings['WALLETADDRESS1'] = input("Please provide the 2nd trading wallet address: ")
-
-        # Check for trading wallet private key
-        if " " in settings['PRIVATEKEY1'] or settings['PRIVATEKEY1'] == "null":
-            settings_changed = True
-            settings['PRIVATEKEY1'] = input("Please provide the 2nd private key for the 2nd trading wallet: ")
-        stoptheprocess = 0
-    else:
+    if settings['WALLETADDRESS1'] == 'no_utility' or settings['PRIVATEKEY1'].startswith('aes:'):
         stoptheprocess = 1
+    else:
+        decision = ""
+        while decision != "y" and decision != "n":
+            decision = input(style.BLUE + "\nWould you like to add a 2nd wallet to use MULTIPLEBUYS feature ? (y/n): ")
+    
+        if decision == "y":
+            print(style.RESET + " ")
+            # Check for trading wallet information
+            if " " in settings['WALLETADDRESS1'] or settings['WALLETADDRESS1'] == "null":
+                settings_changed = True
+                settings['WALLETADDRESS1'] = input("Please provide the 2nd trading wallet address: ")
+    
+            # Check for trading wallet private key
+            if " " in settings['PRIVATEKEY1'] or settings['PRIVATEKEY1'] == "null":
+                settings_changed = True
+                settings['PRIVATEKEY1'] = input("Please provide the 2nd private key for the 2nd trading wallet: ")
+            stoptheprocess = 0
+        else:
+            settings['WALLETADDRESS1'] = "no_utility"
+            stoptheprocess = 1
         
     # add of 3nd wallet
     if stoptheprocess != 1:
@@ -2325,7 +2323,6 @@ def buy(token_dict, inToken, outToken, pwd):
                     printt_ok("All BUYS orders have been sent - Stopping Bot")
                     sys.exit(0)
         else:
-            printt_info("Placing New Buy Order only for wallet number 0 since MULTIPLEBUYS is false")
             make_the_buy(inToken, outToken, 0, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage)
 
 
@@ -2830,7 +2827,10 @@ def run():
         for token in tokens:
             
             # Calculate contract decimals
+            printt_debug("token['ADDRESS']:", token['ADDRESS'])
             token['_CONTRACT_DECIMALS'] = int(decimals(token['ADDRESS']))
+            printt_debug("token['_CONTRACT_DECIMALS']:", token['_CONTRACT_DECIMALS'])
+
             # Check to see if we have any tokens in our wallet already
             token['_TOKEN_BALANCE'] = check_balance(token['ADDRESS'], token['SYMBOL']) / token['_CONTRACT_DECIMALS']
             if token['_TOKEN_BALANCE'] > 0 :
@@ -3121,10 +3121,7 @@ try:
         cooldown = 6
         run()
     else:
-        print(timestamp(),
-              "10 - 50 LIMIT tokens needed to use this bot, please visit the LimitSwap.com for more info or buy more tokens on Uniswap to use!")
-        logging.exception(
-            "10 - 50 LIMIT tokens needed to use this bot, please visit the LimitSwap.com for more info or buy more tokens on Uniswap to use!")
+        printt_err("10 - 50 LIMIT tokens needed to use this bot, please visit the LimitSwap.com for more info or buy more tokens on Uniswap to use!")
 
 except Exception as e:
     printt_err("ERROR. Please go to /log folder and open your error logs : you will find more details.")
