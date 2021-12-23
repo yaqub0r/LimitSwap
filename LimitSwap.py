@@ -1805,37 +1805,44 @@ def check_price(inToken, outToken, symbol, base, custom, routing, buypriceinbase
 ORDER_HASH={}
 def check_price2(inToken, outToken, symbol, base, custom, routing, buypriceinbase, sellpriceinbase, stoplosspriceinbase):
     # This function is made to calculate price of a token
+    # It was developed by the user Juan Lopez : thanks a lot :)
 
-    if custom == 'true':
-        outToken = Web3.toChecksumAddress(outToken)
-    else:
-        outToken = weth
-
-    pair_address = factoryContract.functions.getPair(inToken, outToken).call()
     DECIMALS_OUT = decimals(outToken)
     DECIMALS_IN = decimals(inToken)
-    pair_contract = client.eth.contract(address=pair_address, abi=lpAbi)
-    reserves = pair_contract.functions.getReserves().call()
 
-    printt_debug("ENTER check_price2")
+    if outToken != weth:
+        printt_debug("ENTER check_price2 condition 1")
+        # USECUSTOMBASEPAIR = true and token put in BASEADDRESS is different from WBNB / WETH
+        pair_address = factoryContract.functions.getPair(inToken, outToken).call()
+        pair_contract = client.eth.contract(address=pair_address, abi=lpAbi)
+        reserves = pair_contract.functions.getReserves().call()
 
-    if ORDER_HASH.get(pair_address) is None:
-        value0=pair_contract.functions.token0().call()
-        ORDER_HASH[pair_address]=(value0==inToken)
-    if not ORDER_HASH[pair_address]:
-        tokenPrice=Decimal((reserves[0]/DECIMALS_OUT) / (reserves[1]/DECIMALS_IN))
+        if ORDER_HASH.get(pair_address) is None:
+            value0 = pair_contract.functions.token0().call()
+            ORDER_HASH[pair_address] = (value0 == inToken)
+        if not ORDER_HASH[pair_address]:
+            tokenPrice = Decimal((reserves[0] / DECIMALS_OUT) / (reserves[1] / DECIMALS_IN))
+        else:
+            tokenPrice = Decimal((reserves[1] / DECIMALS_OUT) / (reserves[0] / DECIMALS_IN))
+        printt_debug("tokenPrice1: ", tokenPrice)
     else:
-        tokenPrice=Decimal((reserves[1]/DECIMALS_OUT) / (reserves[0]/DECIMALS_IN))
-    quote = "{:.24f}".format(tokenPrice)
-    #print("----------------------------------------------------------------------")
-    #print("Debug reserves[0] line 982:     ", reserves[0] / DECIMALS_IN,DECIMALS_IN)
-    #print("Debug reserves[1] line 982:     ", reserves[1] / DECIMALS_OUT,DECIMALS_OUT )
-    #print("----------------------------------------------------------------------")
-    #print("Debug LIQUIDITYAMOUNT line 981 :", pooled, "in token:", outToken)
-    #print("----------------------------------------------------------------------")
-    #print("Debug LIQUIDITYAMOUNT line 981 :", quote, "in token:", outToken)
-    printt_debug("tokenPrice: ", tokenPrice)
+        printt_debug("ENTER check_price2 condition 2")
+        # USECUSTOMBASEPAIR = true and token put in BASEADDRESS is WBNB / WETH (because outToken == weth)
+        pair_address = factoryContract.functions.getPair(inToken, weth).call()
+        pair_contract = client.eth.contract(address=pair_address, abi=lpAbi)
+        reserves = pair_contract.functions.getReserves().call()
+
+        if ORDER_HASH.get(pair_address) is None:
+            value0 = pair_contract.functions.token0().call()
+            ORDER_HASH[pair_address] = (value0 == inToken)
+        if not ORDER_HASH[pair_address]:
+            tokenPrice = Decimal((reserves[0] / DECIMALS_OUT) / (reserves[1] / DECIMALS_IN))
+        else:
+            tokenPrice = Decimal((reserves[1] / DECIMALS_OUT) / (reserves[0] / DECIMALS_IN))
+        printt_debug("tokenPrice2: ", tokenPrice)
+
     return tokenPrice
+
 
 
 def calculate_gas(token):
@@ -2991,7 +2998,7 @@ def run():
                     #    need to use later
                     #
                     token['_PREVIOUS_QUOTE'] = quote
-                    quote = check_price(inToken, outToken, token['SYMBOL'], token['BASESYMBOL'],
+                    quote = check_price2(inToken, outToken, token['SYMBOL'], token['BASESYMBOL'],
                                        token['USECUSTOMBASEPAIR'], token['LIQUIDITYINNATIVETOKEN'],
                                        token['BUYPRICEINBASE'], token['SELLPRICEINBASE'], token['STOPLOSSPRICEINBASE'])
                     
