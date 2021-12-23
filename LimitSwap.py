@@ -1320,6 +1320,12 @@ def parse_wallet_settings(settings, pwd):
         settings_changed = True
         settings['PRIVATEKEY'] = input("Please provide the private key for the wallet you want to trade with: ")
 
+    # If the trading wallet private key is already set and encrypted, decrypt it
+    elif settings['PRIVATEKEY'].startswith('aes:'):
+        print(timestamp(), "Decrypting limit wallet private key.")
+        settings['PRIVATEKEY'] = settings['PRIVATEKEY'].replace('aes:', "", 1)
+        settings['PRIVATEKEY'] = cryptocode.decrypt(settings['PRIVATEKEY'], pwd)
+
     # add of 2nd wallet
     if settings['WALLETADDRESS1'] == 'no_utility' or settings['PRIVATEKEY1'].startswith('aes:'):
         stoptheprocess = 1
@@ -1860,7 +1866,7 @@ def calculate_gas(token):
     return 0
 
 
-def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage):
+def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage, DECIMALS):
     # Function: make_the_buy
     # --------------------
     # creates BUY order with the good condition
@@ -2025,13 +2031,14 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
             # Base Pair different from weth
         
             # We display a warning message if user tries to swap with too much money
+            printt_debug("debug 2028 amount / decimals:", int(amount) / DECIMALS)
+
             if (str(inToken).lower() == '0xe9e7cea3dedca5984780bafc599bd69add087d56' or str(
                     inToken).lower() == '0x55d398326f99059ff775485246999027b3197955' or str(
                 inToken).lower() == '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d' or str(
                 inToken).lower() == '0xdac17f958d2ee523a2206206994597c13d831ec7' or str(
                 inToken).lower() == '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48') and (int(amount) / DECIMALS) > 2999:
-                printt_info(
-                    "YOU ARE TRADING WITH VERY BIG AMOUNT, BE VERY CAREFUL YOU COULD LOSE MONEY!!! TEAM RECOMMEND NOT TO DO THAT")
+                printt_info("YOU ARE TRADING WITH VERY BIG AMOUNT, BE VERY CAREFUL YOU COULD LOSE MONEY!!! TEAM RECOMMEND NOT TO DO THAT")
             else:
                 pass
         
@@ -2143,8 +2150,11 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
     sync(inToken, outToken)
 
     if buynumber == 0:
-        settings['PRIVATEKEY'] = settings['PRIVATEKEY'].replace('aes:', "", 1)
-        settings['PRIVATEKEY'] = cryptocode.decrypt(settings['PRIVATEKEY'], pwd)
+        # No need to decrypt PRIVATEKEY because it was already decrypted in parse_wallet_settings()
+        # Leave it like that because it's also used in Pre-Approve
+        #
+        # settings['PRIVATEKEY'] = settings['PRIVATEKEY'].replace('aes:', "", 1)
+        # settings['PRIVATEKEY'] = cryptocode.decrypt(settings['PRIVATEKEY'], pwd)
         signed_txn = client.eth.account.signTransaction(transaction, private_key=settings['PRIVATEKEY'])
     if buynumber == 1:
         settings['PRIVATEKEY1'] = settings['PRIVATEKEY1'].replace('aes:', "", 1)
@@ -2342,13 +2352,13 @@ def buy(token_dict, inToken, outToken, pwd):
             while True:
                 if buynumber < amount_of_buys:
                     printt_info("Placing New Buy Order for wallet number:", buynumber)
-                    make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage)
+                    make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage, DECIMALS)
                     buynumber += 1
                 else:
                     printt_ok("All BUYS orders have been sent - Stopping Bot")
                     sys.exit(0)
         else:
-            make_the_buy(inToken, outToken, 0, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage)
+            make_the_buy(inToken, outToken, 0, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage, DECIMALS)
 
 
 def sell(token_dict, inToken, outToken):
@@ -2992,7 +3002,7 @@ def run():
 
                     # If we're still in the market to buy tokens, the print the buy message
                     # added the condition "if token['_PREVIOUS_QUOTE'] != 0" to avoid having a green line in first position and make trading_is_on work
-                    if token['_PREVIOUS_QUOTE'] != 0 and quote != 0 and token['_REACHED_MAX_TOKENS'] == False:
+                    if token['_PREVIOUS_QUOTE'] != 0 and quote != 0: # and token['_REACHED_MAX_TOKENS'] == False:
                         printt_buy_price(token, quote)
 
                     #
