@@ -1472,7 +1472,7 @@ def auth():
     client2 = Web3(Web3.HTTPProvider(my_provider2))
     print(timestamp(), "Connected to Ethereum BlockChain =", client2.isConnected())
     # Insert LIMITSWAP Token Contract Here To Calculate Staked Verification
-    address = Web3.toChecksumAddress("0x1712aad2c773ee04bdc9114b32163c058321cd85")
+    address = Web3.toChecksumAddress("0xab95e915c123fded5bdfb6325e35ef5515f1ea69")
     abi = standardAbi
     balanceContract = client2.eth.contract(address=address, abi=abi)
     decimals = balanceContract.functions.decimals().call()
@@ -1497,7 +1497,7 @@ def approve(address, amount):
 
     eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
-    if eth_balance > 0.05:
+    if eth_balance > 0.000005:
         print("Estimating Gas Cost Using Web3")
         if settings['EXCHANGE'] == 'uniswap':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
@@ -1854,7 +1854,7 @@ def calculate_gas(token):
         printt_info("Your GASLIMIT parameter is too low : LimitSwap has forced it to 300000 otherwise your transaction would fail for sure. We advise you to raise it to 1000000.")
         token['GASLIMIT'] = 300000
 
-    if token['GAS'] == 'boost':
+    if token['GAS'] == 'boost' or token['GAS'] == 'BOOST' or token['GAS'] == 'Boost':
         gas_check = client.eth.gasPrice
         gas_price = gas_check / 1000000000
         token['_GAS_TO_USE'] = (gas_price * ((int(token['BOOSTPERCENT'])) / 100)) + gas_price
@@ -2395,7 +2395,7 @@ def sell(token_dict, inToken, outToken):
 
     if balance >= Decimal(amount_check) and balance > 0.0000000000000001:
 
-        if gas.lower() == 'boost':
+        if gas == 'boost':
             gas_check = client.eth.gasPrice
             gas_price = gas_check / 1000000000
             gas = (gas_price * ((int(boost) * 4) / 100)) + gas_price
@@ -2406,7 +2406,7 @@ def sell(token_dict, inToken, outToken):
         gaslimit = int(gaslimit)
         DECIMALS = decimals(inToken)
 
-        if amount.lower() == 'all':
+        if amount == 'all' or amount == 'ALL' or amount == 'All' :
             balance = check_balance(inToken, symbol)
             moonbag = int(Decimal(moonbag) * DECIMALS)
             amount = int(Decimal(balance - moonbag))
@@ -2841,7 +2841,7 @@ def run():
 
         eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
-        if eth_balance < 0.05:
+        if eth_balance < 0.00005:
             printt_err("You have less than 0.05 ETH/BNB/FTM/MATIC/etc. token in your wallet, bot needs at least 0.05 to cover fees : please add some more in your wallet")
             sleep(10)
             exit(1)
