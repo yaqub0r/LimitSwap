@@ -14,6 +14,7 @@ import requests
 import cryptocode, re, pwinput
 import argparse
 import signal
+import ccxt
 
 # DEVELOPER CONSIDERATIONS
 #
@@ -90,6 +91,8 @@ parser.add_argument("--pump", type=int,
                     help="Holds the position as long as the price is going up. Sells when the price has gone down PUMP percent")
 parser.add_argument("-p", "--password", type=str,
                     help="Password to decrypt private keys (WARNING: your password could be saved in your command prompt history)")
+parser.add_argument("--reject_instant_liquidity", action='store_true',
+                    help="If liquidity is found on the first check, reject that pair.")
 parser.add_argument("-s", "--settings", type=str, help="Specify the file to user for settings (default: settings.json)",
                     default="./settings.json")
 parser.add_argument("-t", "--tokens", type=str,
@@ -415,7 +418,11 @@ def load_tokens_file(tokens_path, load_message=True):
     #
     # returns: 1. a dictionary of dictionaries in json format containing details of the tokens we're rading
     #          2. the timestamp for the last modification of the file
-        
+    
+    # Any new token configurations that are added due to "WATCH_STABLES_ALSO" configuration will be added to this array. After we are done
+    # loading all settings from tokens.json, we'll append this list to the token list
+    set_of_new_tokens = []
+
     if load_message == True:
         print(timestamp(), "Loading tokens from", tokens_path)
 
@@ -431,19 +438,20 @@ def load_tokens_file(tokens_path, load_message=True):
     ]
 
     default_true_settings = [
-        'LIQUIDITYINNATIVETOKEN',
+        'LIQUIDITYINNATIVETOKEN'
     ]
 
     default_false_settings = [
         'ENABLED',
         'LIQUIDITYCHECK',
-        'LIQUIDITYINNATIVETOKEN',
-        'USECUSTOMBASEPAIR',
         'HASFEES',
-        'RUGDOC_CHECK'
+        'USECUSTOMBASEPAIR',
+        'RUGDOC_CHECK',
+        'WATCH_STABLES_ALSO'
     ]
 
     default_value_settings = {
+        'LIQUIDITYAMOUNT' : 0,
         'SLIPPAGE' : 49,
         'MAXTOKENS' : 0,
         'MOONBAG' : 0,
@@ -454,33 +462,37 @@ def load_tokens_file(tokens_path, load_message=True):
         'BUYAFTER_XXX_SECONDS' : 0,
         'MAX_FAILED_TRANSACTIONS_IN_A_ROW' : 2,
         'GASPRIORITY_FOR_ETH_ONLY' : 1.5,
-        'STOPLOSSPRICEINBASE' : 0
+        'STOPLOSSPRICEINBASE' : 0,
+        '_STABLE_BASES' : {}
     }
 
     # There are values that we will set internally. They must all begin with _
-    # _INFORMED_SELL        - set to true when we've already informed the user that we're selling this position
-    # _LIQUIDITY_READY      - a flag to test if we've found liquidity for this pair
-    # _LIQUIDITY_CHECKED    - a flag to test if we've check for the amount of liquidity for this pair
-    # _INFORMED_SELL        - a flag to store that we've printed to console that we are going to be selling the position
-    # _REACHED_MAX_TOKENS   - flag to look at to determine if the user's wallet has reached the maximum number of flags
-    #                         this flag is used for conditionals throughout the run of this bot. Be sure to set this
-    #                         flag after enough tokens that brings the number of token up to the MAXTOKENS. In other words
-    #                         done depend on (if MAXTOKENS < _TOKEN_BALANCE) conditionals
-    # _GAS_TO_USE           - the amount of gas the bot has estimated it should use for the purchase of a token
-    #                         this number is calculated every bot start up
-    # _FAILED_TRANSACTIONS  - the number of times a transaction has failed for this token
-    # _TOKEN_BALANCE'       - the number of traded tokens the user has in her wallet
-    # _PREVIOUS_QUOTE'      - holds the ask price for a token the last time a price was queried, this is used
-    #                         to determine the direction the market is going
-    # _COST_PER_TOKEN'      - the calculated/estimated price the bot paid for the number of tokens it traded
-    # _ALL_TIME_HIGH'       - the highest price a token has had since the bot was started
-    # _ALL_TIME_LOW'        - the lowest price a token has had since the bot was started
-    # _CONTRACT_DECIMALS    - the number of decimals a contract uses. Used to speed up some of our processes
-    #                         instead of querying the contract for the same information repeatedly. 
-    # _LAST_PRICE_MESSAGE   - a copy of the last pricing message printed to console, used to determine the price
-    #                         should be printed again, or just a dot
-    # _LAST_MESSAGE         - a place to store a copy of the last message printed to conside, use to avoid
-    #                         repeated liquidity messages
+    # _INFORMED_SELL         - set to true when we've already informed the user that we're selling this position
+    # _LIQUIDITY_READY       - a flag to test if we've found liquidity for this pair
+    # _LIQUIDITY_CHECKED     - a flag to test if we've check for the amount of liquidity for this pair
+    # _INFORMED_SELL         - a flag to store that we've printed to console that we are going to be selling the position
+    # _REACHED_MAX_TOKENS    - flag to look at to determine if the user's wallet has reached the maximum number of flags
+    #                          this flag is used for conditionals throughout the run of this bot. Be sure to set this
+    #                          flag after enough tokens that brings the number of token up to the MAXTOKENS. In other words
+    #                          done depend on (if MAXTOKENS < _TOKEN_BALANCE) conditionals
+    # _GAS_TO_USE            - the amount of gas the bot has estimated it should use for the purchase of a token
+    #                          this number is calculated every bot start up
+    # _FAILED_TRANSACTIONS   - the number of times a transaction has failed for this token
+    # _TOKEN_BALANCE'        - the number of traded tokens the user has in her wallet
+    # _PREVIOUS_QUOTE'       - holds the ask price for a token the last time a price was queried, this is used
+    #                          to determine the direction the market is going
+    # _COST_PER_TOKEN'       - the calculated/estimated price the bot paid for the number of tokens it traded
+    # _ALL_TIME_HIGH'        - the highest price a token has had since the bot was started
+    # _ALL_TIME_LOW'         - the lowest price a token has had since the bot was started
+    # _CONTRACT_DECIMALS     - the number of decimals a contract uses. Used to speed up some of our processes
+    #                          instead of querying the contract for the same information repeatedly. 
+    # _LAST_PRICE_MESSAGE    - a copy of the last pricing message printed to console, used to determine the price
+    #                          should be printed again, or just a dot
+    # _FIRST_SELL_QUOTE      - a record of the first quote we received after recognizing that we want to sell the position
+    # _LAST_MESSAGE          - a place to store a copy of the last message printed to conside, use to avoid
+    #                          repeated liquidity messages
+    # _EXCHANGE_BASE_SYMBOL  - this is the symbol for the base that is used by the exchange the token is trading on
+    # _PAIR_SYMBOL           - the symbol for this TOKEN/BASE pair
 
     program_defined_values = {
         '_LIQUIDITY_READY' : False,
@@ -496,8 +508,11 @@ def load_tokens_file(tokens_path, load_message=True):
         '_ALL_TIME_LOW' : 0,
         '_CONTRACT_DECIMALS' : 0,
         '_LAST_PRICE_MESSAGE' : 0,
-        '_LAST_MESSAGE' : 0
-
+        '_LAST_MESSAGE' : 0,
+        '_FIRST_SELL_QUOTE' : 0,
+        '_BUILT_BY_BOT' : False,
+        '_EXCHANGE_BASE_SYMBOL' : settings['_EXCHANGE_BASE_SYMBOL'],
+        '_PAIR_SYMBOL' : ''
     }
     
     for token in tokens:
@@ -542,6 +557,23 @@ def load_tokens_file(tokens_path, load_message=True):
             if(isinstance(token[key], str)):
                 if re.search(r'^\d*\.\d+$', str(token[key])): token[key] = float(token[key])
                 elif re.search(r'^\d+$', token[key]): token[key] = int(token[key])
+
+        if token['WATCH_STABLES_ALSO'] == 'true' and token['USECUSTOMBASEPAIR'] == 'false':
+            for new_token_dict in build_extended_base_configuration(token):
+                set_of_new_tokens.append(new_token_dict)
+        elif token['WATCH_STABLES_ALSO'] == 'true':
+            printt_warn ("Ignoring WATCH_STABLES_ALSO", "for", token['SYMBOL'],
+                ". WATCH_STABLES_ALSO and USECUSTOMBASEPAIR both set to true is unsupported.")
+
+
+        if token['USECUSTOMBASEPAIR'] == 'false':
+            token['_PAIR_SYMBOL'] = token['SYMBOL'] + '/' + token['_EXCHANGE_BASE_SYMBOL']
+        else:
+            token['_PAIR_SYMBOL'] = token['SYMBOL'] + '/' + token['BASESYMBOL']
+
+    # Add any tokens generated by "WATCH_STABLES_ALSO" to the tokens list.
+    for token_dict in set_of_new_tokens:
+        tokens.append(token_dict)
 
 
 
@@ -698,19 +730,23 @@ def token_list_report(tokens, all_pairs=False):
     # returns: an array of all SYMBOLS we are trading
 
     token_list = ""
-
+    tokens_trading = 0
     for token in tokens:
         if all_pairs == True or token["ENABLED"] == 'true':
+            tokens_trading += 1
             if token_list != "":
                 token_list = token_list + " "
-            token_list = token_list + token['SYMBOL']
+            if token['USECUSTOMBASEPAIR'] == 'false':
+                token_list = token_list + token['_PAIR_SYMBOL']
+            else:
+                token_list = token_list + token['_PAIR_SYMBOL']
 
     if all_pairs == False:
-        printt("Quantity of tokens attempting to trade:", len(tokens), "(" , token_list , ")")
+        printt("Quantity of tokens attempting to trade:", tokens_trading, "(" , token_list , ")")
     else:
         printt("Quantity of tokens attempting to trade:", len(tokens), "(" , token_list , ")")
 
-  
+
 
 """""""""""""""""""""""""""
 //PRELOAD
@@ -825,6 +861,13 @@ if settings['EXCHANGE'] == 'pancakeswap':
     base_symbol = "BNB"
     rugdocchain = '&chain=bsc'
     modified = False
+
+    settings['_CCXT_EXCHANGE'] = ccxt.binance()
+    settings['_EXCHANGE_BASE_SYMBOL'] = 'BNB'
+    settings['_STABLE_BASES'] = {'USDT':{ 'address': '0x55d398326f99059ff775485246999027b3197955', 'multiplier' : 0},
+                                 'BUSD':{ 'address': '0xe9e7cea3dedca5984780bafc599bd69add087d56', 'multiplier' : 0},
+                                 'USDC':{ 'address': '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', 'multiplier' : 0}}
+
 
 if settings['EXCHANGE'].lower() == 'pancakeswaptesnet':
 
@@ -1247,6 +1290,52 @@ def save_settings(settings, pwd):
         f.write(json.dumps(output_settings, indent=4))
         f.write("\n]\n")
 
+def update_stable_multipliers ():
+    # Function: update_custom_prices
+    # ----------------------------
+    # updates the values of the custom bases we'd like to use as it compares to the base symbol for the exchange
+    # the user has selectex
+    #
+    # returns: nothing
+
+    for stable_token in settings['_STABLE_BASES']:
+        stable_ticker = settings['_EXCHANGE_BASE_SYMBOL'] + '/' + stable_token
+        stable_per_base = settings['_CCXT_EXCHANGE'].fetch_ticker(stable_ticker)['bid']
+        settings['_STABLE_BASES'][stable_token]['multiplier'] = stable_per_base
+
+
+def build_extended_base_configuration (token_dict):
+    # Function: build_extended_base_configuration
+    # ----------------------------
+    # Check the user defined token list for the _STABLE_BASES and build configurations for each
+    #
+    # returns: an array of dictionaries containing the configuration build of the token
+    #          that can be parsed and or added to the the token configuration for trading
+
+    update_stable_multipliers()
+
+    new_token_set = []
+
+    token_dict['_BUILT_BY_BOT'] = True
+    for stable_token in settings['_STABLE_BASES']:
+        new_token = token_dict.copy()
+        new_token.update({
+                        'BUYAMOUNTINBASE': token_dict['BUYAMOUNTINBASE'] * settings['_STABLE_BASES'][stable_token]['multiplier'],
+                        "BUYPRICEINBASE": token_dict['BUYPRICEINBASE'] * settings['_STABLE_BASES'][stable_token]['multiplier'],
+                        "SELLPRICEINBASE": token_dict['SELLPRICEINBASE'] * settings['_STABLE_BASES'][stable_token]['multiplier'],
+                        "LIQUIDITYAMOUNT": token_dict['LIQUIDITYAMOUNT'] * settings['_STABLE_BASES'][stable_token]['multiplier'],
+                        "LIQUIDITYINNATIVETOKEN": "false",
+                        "USECUSTOMBASEPAIR": "true",
+                        "BASESYMBOL": stable_token,
+                        "BASEADDRESS": settings['_STABLE_BASES'][stable_token]['address'],
+                        "_PAIR_SYMBOL" : token_dict['SYMBOL'] + '/' + stable_token,
+                        "_BUILT_BY_BOT" : True
+                        })
+        new_token_set.append(new_token)
+
+    return new_token_set
+
+
 def parse_wallet_settings(settings, pwd):
     # Function: load_wallet_settings
     # ----------------------------
@@ -1481,6 +1570,20 @@ def check_bnb_balance():
     print(timestamp(), "Current Wallet Balance is :", Web3.fromWei(balance, 'ether'), base_symbol)
     return balance
 
+# def check_base_balance(token_dict):
+#     # Function: check_base_balance
+#     # --------------------
+#     # check and display the number of base tokens in the user's
+#     #
+#     # token - one element of the tokens{} dictionary
+#     #
+#     # returns - balance in base token
+#     #         - sets token['_EXCHANGE_BASE'] to number of tokens available
+
+#     token_dict['_EXCHANGE_BASE'] =  eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
+
+#     return token_dict['_EXCHANGE_BASE']
+
 def check_balance(address, symbol='UNKNOWN_TOKEN', display_quantity=True):
     # Function: check_balance
     # --------------------
@@ -1503,7 +1606,15 @@ def check_balance(address, symbol='UNKNOWN_TOKEN', display_quantity=True):
 
     print(timestamp(), "Current Wallet Balance is: " + str(balance / DECIMALS) + " " + symbol)
     printt_debug("EXIT: check_balance()")
+
     return balance
+
+# def check_trade_ability(inSymbol, outSymbol, inQuantity='all'):
+    # Function: check_trade_ability
+    # --------------------
+    # check to make sure the user has enough tokens to trade the selected pair
+    #
+    # inSymbol
 
 def fetch_pair(inToken, outToken):
     print(timestamp(), "Fetching Pair Address")
@@ -2520,7 +2631,10 @@ def sell(token_dict, inToken, outToken):
         pass
 
 def run():
-    
+
+    # update_custom_prices()
+
+
     # Price Quote
     quote = 0
     reload_tokens_file = False
@@ -2532,7 +2646,7 @@ def run():
 
     try:
 
-        tokens = load_tokens_file(command_line_args.tokens, True)
+        # Check to make sure there is enough in the user's wallet to cover transaction fees.
         eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
         if eth_balance < 0.05:
@@ -2540,9 +2654,21 @@ def run():
             sleep(10)
             exit(1)
 
+
+        # Load tokens from file
+        tokens = load_tokens_file(command_line_args.tokens, True)
+
+        # Check all wallets to make sure the user has enough to trade
+        for token in tokens:
+            if token['USECUSTOMBASEPAIR'] == 'true':
+                if check_balance(token['BASEADDRESS'], '', False) < token['BUYAMOUNTINBASE']:
+                    trading_pair = token['SYMBOL'] + '/' + token['BASESYMBOL']
+                    printt_warn("Disabling", trading_pair ,'- Not enough', token['BASESYMBOL'], 'in wallet to complete transaction')
+                    token['ENABLED'] = 'false'
+        
+        
         # Display the number of token pairs we're attempting to trade
         token_list_report(tokens)
-
 
         # Check to see if the user wants to pre-approve token transactions. If they do, work through that approval process
         if settings['PREAPPROVE'] == 'true':
@@ -2554,6 +2680,7 @@ def run():
         #
         # TODO PRUNE: Prune tokens if the user doesn't want to trade them. Exit only if we don't have any more tokens left
         # TODO ARG: Implement an argument that auto accepts or prunes tokens that are rejected/accepted by the rugdoc check
+        
         for token in tokens:
             # Calculate contract decimals
             token['_CONTRACT_DECIMALS'] = int(decimals(token['ADDRESS']))
@@ -2595,6 +2722,7 @@ def run():
         loopcheck_timestamp = 0
         loopcheck_nextcheck = 0
         loopcheck_checkfrequency = 10
+        first_liquidity_check = True
 
         while True:
 
@@ -2659,6 +2787,10 @@ def run():
                                 token['_LIQUIDITY_READY'] = True
                                 printt_info ("Found liquidity for",token['SYMBOL'])
 
+                                if first_liquidity_check == True and command_line_args.reject_instant_liquidity:
+                                    printt("Rejecting", token['_PAIR_SYMBOL'], "because it already had liquidity.")
+                                    token['ENABLED'] = 'false'
+                                    
                                 #
                                 #  CHECK FOR LIQUIDITY AMOUNT
                                 #    If we've found liquidity and want to check for liquidity amount, do that here.
@@ -2682,8 +2814,11 @@ def run():
                                         quote = 0
                                         continue
 
-                        except Exception:
-                            printt_repeating (token, token['SYMBOL'] + " - Waiting for liquidity to be added on exchange [" + bot_settings['_QUERIES_PER_SECOND']  + " queries/s]")
+                        except Exception as e:
+                            # logging.exception(e)
+                            # logger1.exception(e)
+                            # exit(0)
+                            printt_repeating (token, token['_PAIR_SYMBOL'] + " - Waiting for liquidity to be added on exchange [" + bot_settings['_QUERIES_PER_SECOND']  + " queries/s]")
                             continue
 
                     #
@@ -2716,7 +2851,7 @@ def run():
                     #   If the liquidity check has returned a quote that is less than our BUYPRICEINBASE and we haven't informrmed
                     #   the user that we've reached the maximum number of tokens, check for other criteria to buy.
                     #
-                    if quote != 0 and quote < Decimal(token['BUYPRICEINBASE']) and token['_REACHED_MAX_TOKENS'] == False:
+                    if quote != 0 and quote < Decimal(token['BUYPRICEINBASE']) and token['_REACHED_MAX_TOKENS'] == False and token['ENABLED'] == 'true':
                         #
                         # PURCHASE POSITION
                         #   If we've passed all checks, attempt to purchase the token
@@ -2771,7 +2906,7 @@ def run():
                     # SELL CHECK
                     #   If there are already more than MAX_TOKENS in the user's wallet, check to see if we should sell them.
                     #
-                    elif token['_REACHED_MAX_TOKENS'] == True :
+                    elif token['_REACHED_MAX_TOKENS'] == True and token['ENABLED'] == 'true':
                         
                         price_conditions_met = False
                         
@@ -2788,11 +2923,18 @@ def run():
                                 printt_warn("WARNING: You are running a pump on an already purchased position.")
                                 sleep(5)
 
-                            maximum_gains = token['_ALL_TIME_HIGH'] - token['_COST_PER_TOKEN']
-                            minimum_price = token['_ALL_TIME_HIGH'] - (command_line_args.pump * 0.01 * maximum_gains)
-                            if quote < minimum_price:
-                                printt_err(token['SYMBOL'],"has dropped", command_line_args.pump,"% from it's ATH - SELLING POSITION")
-                                price_conditions_met = True
+                            # We don't currently have a way to estimate true cost per token, because we are including fees. So, we need
+                            # to get two quotes so that we can do trend analysis
+                            if token['_FIRST_SELL_QUOTE'] == 0:
+                                token['_FIRST_SELL_QUOTE'] = quote
+                            
+                            else:
+
+                                maximum_gains = token['_ALL_TIME_HIGH'] - token['_FIRST_SELL_QUOTE']
+                                minimum_price = token['_ALL_TIME_HIGH'] - (command_line_args.pump * 0.01 * maximum_gains)
+                                if quote < minimum_price:
+                                    printt_err(token['SYMBOL'],"has dropped", command_line_args.pump,"% from it's ATH - SELLING POSITION")
+                                    price_conditions_met = True
 
                         elif quote > Decimal(token['SELLPRICEINBASE']) or quote < Decimal(token['STOPLOSSPRICEINBASE']):
                             price_conditions_met = True
@@ -2818,7 +2960,7 @@ def run():
                             token['ENABLED'] = 'false'
                             check_balance(token['ADDRESS'], token['SYMBOL'])
 
-
+            first_liquidity_check = False
             sleep(cooldown + bot_too_fast_cooldown)
 
     except Exception as ee:
