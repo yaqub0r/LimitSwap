@@ -2039,6 +2039,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                 inToken).lower() == '0xdac17f958d2ee523a2206206994597c13d831ec7' or str(
                 inToken).lower() == '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48') and (int(amount) / DECIMALS) > 2999:
                 printt_info("YOU ARE TRADING WITH VERY BIG AMOUNT, BE VERY CAREFUL YOU COULD LOSE MONEY!!! TEAM RECOMMEND NOT TO DO THAT")
+                sleep(50)
             else:
                 pass
         
@@ -2331,6 +2332,7 @@ def buy(token_dict, inToken, outToken, pwd):
         balance_check = check_balance(inToken, base)
         balance = balance_check / DECIMALS
 
+    printt_debug("2335 Decimal(amount):", Decimal(amount))
     if balance > Decimal(amount):
         if gas == 'boost':
             gas_check = client.eth.gasPrice
@@ -2360,6 +2362,10 @@ def buy(token_dict, inToken, outToken, pwd):
         else:
             make_the_buy(inToken, outToken, 0, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage, DECIMALS)
 
+    else:
+        printt_err("You don't have enough in your wallet to make the BUY order, bot stops", )
+        # TODO : do not make the bot stop and continue trading other tokens
+        sys.exit()
 
 def sell(token_dict, inToken, outToken):
 
