@@ -2407,7 +2407,7 @@ def sell(token_dict, inToken, outToken):
 
     if balance >= Decimal(amount_check) and balance > 0.0000000000000001:
 
-        if gas == 'boost':
+        if gas == 'boost' or gas == 'BOOST' or gas == 'Boost':
             gas_check = client.eth.gasPrice
             gas_price = gas_check / 1000000000
             gas = (gas_price * ((int(boost) * 4) / 100)) + gas_price
