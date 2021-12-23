@@ -1901,11 +1901,8 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
         if routing.lower() == 'false':
             # LIQUIDITYINNATIVETOKEN = false
             # USECUSTOMBASEPAIR = false
-            printt_err(
-                "You have selected LIQUIDITYINNATIVETOKEN = false , so you must choose USECUSTOMBASEPAIR = true \n"
-                "Please read Wiki carefully, it's very important you can lose money!!")
-            logging.info(
-                "You have selected LIQUIDITYINNATIVETOKEN = false , so you must choose USECUSTOMBASEPAIR = true. Please read Wiki carefully, it's very important you can lose money!!")
+            printt_err("You have selected LIQUIDITYINNATIVETOKEN = false , so you must choose USECUSTOMBASEPAIR = true")
+            printt_err("Please read Wiki carefully, it's very important you can lose money!!")
             sleep(10)
             sys.exit()
         else:
@@ -2038,21 +2035,15 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
             # Base Pair different from weth
         
             # We display a warning message if user tries to swap with too much money
-            printt_debug("debug 2028 amount / decimals:", int(amount) / DECIMALS)
-
             if (str(inToken).lower() == '0xe9e7cea3dedca5984780bafc599bd69add087d56' or str(
                     inToken).lower() == '0x55d398326f99059ff775485246999027b3197955' or str(
                 inToken).lower() == '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d' or str(
                 inToken).lower() == '0xdac17f958d2ee523a2206206994597c13d831ec7' or str(
                 inToken).lower() == '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48') and (int(amount) / DECIMALS) > 2999:
                 printt_info("YOU ARE TRADING WITH VERY BIG AMOUNT, BE VERY CAREFUL YOU COULD LOSE MONEY!!! TEAM RECOMMEND NOT TO DO THAT")
-                sleep(50)
-            else:
-                pass
         
             if routing.lower() == 'true':
-                amount_out = routerContract.functions.getAmountsOut(amount, [inToken, weth, outToken]).call()[
-                    -1]
+                amount_out = routerContract.functions.getAmountsOut(amount, [inToken, weth, outToken]).call()[-1]
                 if settings['UNLIMITEDSLIPPAGE'].lower() == 'true':
                     min_tokens = 100
                 else:
@@ -2104,9 +2095,17 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                 # LIQUIDITYINNATIVETOKEN = false
                 # USECUSTOMBASEPAIR = true
                 # Base Pair different from weth
-                printt_debug("2034 amount:", amount)
-                printt_debug("2034 inToken:", inToken)
-                printt_debug("2034 outToken:", outToken)
+
+                # We display a warning message if user tries to swap with too much money
+                if (str(inToken).lower() == '0xe9e7cea3dedca5984780bafc599bd69add087d56' or str(
+                        inToken).lower() == '0x55d398326f99059ff775485246999027b3197955' or str(
+                    inToken).lower() == '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d' or str(
+                    inToken).lower() == '0xdac17f958d2ee523a2206206994597c13d831ec7' or str(
+                    inToken).lower() == '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48') and (
+                        int(amount) / DECIMALS) > 2999:
+                    printt_info(
+                        "YOU ARE TRADING WITH VERY BIG AMOUNT, BE VERY CAREFUL YOU COULD LOSE MONEY!!! TEAM RECOMMEND NOT TO DO THAT")
+
                 amount_out = routerContract.functions.getAmountsOut(amount, [inToken, outToken]).call()[-1]
                 if settings['UNLIMITEDSLIPPAGE'].lower() == 'true':
                     min_tokens = 100
