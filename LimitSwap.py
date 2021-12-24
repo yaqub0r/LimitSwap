@@ -469,7 +469,9 @@ def load_tokens_file(tokens_path, load_message=True):
         'LIQUIDITYINNATIVETOKEN',
         'USECUSTOMBASEPAIR',
         'HASFEES',
-        'RUGDOC_CHECK'
+        'RUGDOC_CHECK',
+        'MULTIPLEBUYS',
+        'WAIT_FOR_OPEN_TRADE'
     ]
 
     default_value_settings = {
@@ -483,7 +485,8 @@ def load_tokens_file(tokens_path, load_message=True):
         'BUYAFTER_XXX_SECONDS' : 0,
         'MAX_FAILED_TRANSACTIONS_IN_A_ROW' : 2,
         'GASPRIORITY_FOR_ETH_ONLY' : 1.5,
-        'STOPLOSSPRICEINBASE' : 0
+        'STOPLOSSPRICEINBASE' : 0,
+        'BUYCOUNT' : 0
     }
 
     # There are values that we will set internally. They must all begin with _
@@ -619,7 +622,9 @@ def reload_tokens_file(tokens_path, load_message=True):
         'LIQUIDITYINNATIVETOKEN',
         'USECUSTOMBASEPAIR',
         'HASFEES',
-        'RUGDOC_CHECK'
+        'RUGDOC_CHECK',
+        'MULTIPLEBUYS',
+        'WAIT_FOR_OPEN_TRADE'
     ]
 
     default_value_settings = {
@@ -633,7 +638,8 @@ def reload_tokens_file(tokens_path, load_message=True):
         'BUYAFTER_XXX_SECONDS' : 0,
         'MAX_FAILED_TRANSACTIONS_IN_A_ROW' : 2,
         'GASPRIORITY_FOR_ETH_ONLY' : 1.5,
-        'STOPLOSSPRICEINBASE' : 0
+        'STOPLOSSPRICEINBASE' : 0,
+        'BUYCOUNT' : 0
     }
 
     # There are values that we will set internally. They must all begin with _
@@ -1023,6 +1029,24 @@ elif settings["EXCHANGE"] == 'uniswap':
     routerContract = client.eth.contract(address=routerAddress, abi=routerAbi)
     factoryContract = client.eth.contract(address=factoryAddress, abi=factoryAbi)
     weth = Web3.toChecksumAddress("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2")
+    base_symbol = "ETH"
+    rugdocchain = '&chain=eth'
+    modified = False
+
+elif settings["EXCHANGE"] == 'uniswaptestnet':
+    if settings['USECUSTOMNODE'] == 'true':
+        my_provider = settings['CUSTOMNODE']
+    else:
+        my_provider = "https://rinkeby-light.eth.linkpool.io"
+
+    client = Web3(Web3.HTTPProvider(my_provider))
+    print(timestamp(), "Uniswap Chain Connected =", client.isConnected())
+    print(timestamp(), "Loading Smart Contracts...")
+    routerAddress = Web3.toChecksumAddress("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D")
+    factoryAddress = Web3.toChecksumAddress("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f")
+    routerContract = client.eth.contract(address=routerAddress, abi=routerAbi)
+    factoryContract = client.eth.contract(address=factoryAddress, abi=factoryAbi)
+    weth = Web3.toChecksumAddress("0xc778417e063141139fce010982780140aa0cd5ab")
     base_symbol = "ETH"
     rugdocchain = '&chain=eth'
     modified = False
@@ -1499,14 +1523,11 @@ def approve(address, amount):
 
     if eth_balance > 0.05:
         print("Estimating Gas Cost Using Web3")
-        if settings['EXCHANGE'] == 'uniswap':
+        if settings['EXCHANGE'] == 'uniswap' or settings['EXCHANGE'] == 'uniswaptestnet':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
             print("Current Gas Price =", gas)
 
-        elif settings['EXCHANGE'] == 'pancakeswap':
-            gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
-            print("Current Gas Price = ", gas)
-        elif settings['EXCHANGE'] == 'pancakeswaptestnet':
+        elif settings['EXCHANGE'] == 'pancakeswap' or settings['EXCHANGE'] == 'pancakeswaptestnet':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
             print("Current Gas Price = ", gas)
         elif settings['EXCHANGE'] == 'spiritswap':
@@ -1954,7 +1975,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                 # This section is for exchange with Modified = false --> uniswap / pancakeswap / apeswap, etc.
             
                 # Special condition on Uniswap, to implement EIP-1559
-                if settings["EXCHANGE"].lower() == 'uniswap':
+                if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                     transaction = routerContract.functions.swapExactETHForTokens(
                         min_tokens,
                         [weth, outToken],
@@ -1998,7 +2019,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                 min_tokens = int(amount_out * (1 - (slippage / 100)))
             deadline = int(time() + + 60)
         
-            if settings["EXCHANGE"].lower() == 'uniswap':
+            if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                 # Special condition on Uniswap, to implement EIP-1559
                 transaction = routerContract.functions.swapExactTokensForTokens(
                     min_tokens,
@@ -2050,7 +2071,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                     min_tokens = int(amount_out * (1 - (slippage / 100)))
                 deadline = int(time() + + 60)
             
-                if settings["EXCHANGE"].lower() == 'uniswap':
+                if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                     # USECUSTOMBASEPAIR = true
                     # Base Pair different from weth
                     # LIQUIDITYINNATIVETOKEN = true
@@ -2113,7 +2134,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                     min_tokens = int(amount_out * (1 - (slippage / 100)))
                 deadline = int(time() + + 60)
             
-                if settings["EXCHANGE"].lower() == 'uniswap':
+                if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                     # LIQUIDITYINNATIVETOKEN = false
                     # USECUSTOMBASEPAIR = true
                     # Base Pair different from weth
@@ -2295,6 +2316,8 @@ def buy(token_dict, inToken, outToken, pwd):
     # WARNING: BALANCE CHECK HAS BEEN REMOVED FROM buy() - THIS SHOULD BE IMPLEMENTED IN ANOTHER FUCTION
     #
 
+    printt_debug("ENTER buy()")
+
     # Map variables until all code is cleaned up.
     amount = token_dict['BUYAMOUNTINBASE']
     gas = token_dict['GAS']
@@ -2311,12 +2334,16 @@ def buy(token_dict, inToken, outToken, pwd):
     buycount = token_dict['BUYCOUNT']
 
 
+    # Check for amount of failed transactions before buy (MAX_FAILED_TRANSACTIONS_IN_A_ROW parameter)
+    printt_debug("debug 2325 _FAILED_TRANSACTIONS:", token_dict['_FAILED_TRANSACTIONS'])
     if token_dict['_FAILED_TRANSACTIONS'] >= int(token_dict['MAX_FAILED_TRANSACTIONS_IN_A_ROW']):
         printt_err("---------------------------------------------------------------")
         printt_err("DISABLING", token_dict['SYMBOL'])
         printt_err("This token has reached maximum FAILED SIMULTANIOUS TRANSACTIONS")
         printt_err("---------------------------------------------------------------")
         token_dict['ENABLED'] = 'false'
+    
+    # Check if bot needs to wait before buy (BUYAFTER_XXX_SECONDS parameter)
     elif token_dict['BUYAFTER_XXX_SECONDS'] != 0:
         printt_info("Bot will wait", token_dict['BUYAFTER_XXX_SECONDS'], " seconds before buy, as you entered in BUYAFTER_XXX_SECONDS parameter")
         sleep(token_dict['BUYAFTER_XXX_SECONDS'])
@@ -2388,6 +2415,14 @@ def sell(token_dict, inToken, outToken):
     routing = token_dict['LIQUIDITYINNATIVETOKEN']
     gaspriority = token_dict['GASPRIORITY_FOR_ETH_ONLY']
 
+    # Check for amount of failed transactions before sell (MAX_FAILED_TRANSACTIONS_IN_A_ROW parameter)
+    printt_debug("debug 2419 _FAILED_TRANSACTIONS:", token_dict['_FAILED_TRANSACTIONS'])
+    if token_dict['_FAILED_TRANSACTIONS'] >= int(token_dict['MAX_FAILED_TRANSACTIONS_IN_A_ROW']):
+        printt_err("---------------------------------------------------------------")
+        printt_err("DISABLING", token_dict['SYMBOL'])
+        printt_err("This token has reached maximum FAILED SIMULTANIOUS TRANSACTIONS")
+        printt_err("---------------------------------------------------------------")
+        token_dict['ENABLED'] = 'false'
 
     print(timestamp(), "Placing Sell Order " + symbol)
     balance = Web3.fromWei(check_balance(inToken, symbol), 'ether')
@@ -2540,7 +2575,7 @@ def sell(token_dict, inToken, outToken):
                     # HASFEES = false
                     # Modified = false --> uniswap / pancakeswap / apeswap, etc.
 
-                    if settings["EXCHANGE"].lower() == 'uniswap':
+                    if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                         # Special condition on Uniswap, to implement EIP-1559
                         transaction = routerContract.functions.swapExactTokensForETH(
                             amount,
@@ -2671,7 +2706,7 @@ def sell(token_dict, inToken, outToken):
                         # LIQUIDITYINNATIVETOKEN = false
                         # USECUSTOMBASEPAIR = true
                         # HASFEES = true
-                        if settings["EXCHANGE"].lower() == 'uniswap':
+                        if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                             # Special condition on Uniswap, to implement EIP-1559
                             transaction = routerContract.functions.swapExactTokensForTokensSupportingFeeOnTransferTokens(
                                 amount,
@@ -2708,7 +2743,7 @@ def sell(token_dict, inToken, outToken):
                         # LIQUIDITYINNATIVETOKEN = false
                         # USECUSTOMBASEPAIR = true
                         # HASFEES = false
-                        if settings["EXCHANGE"].lower() == 'uniswap':
+                        if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                             # Special condition on Uniswap, to implement EIP-1559
                             transaction = routerContract.functions.swapExactTokensForTokens(
                                 amount,
@@ -2756,7 +2791,7 @@ def sell(token_dict, inToken, outToken):
 
                     if fees.lower() == 'true':
                         # HASFEES = true
-                        if settings["EXCHANGE"].lower() == 'uniswap':
+                        if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                             # Special condition on Uniswap, to implement EIP-1559
                             transaction = routerContract.functions.swapExactTokensForTokensSupportingFeeOnTransferTokens(
                                 amount,
@@ -2790,7 +2825,7 @@ def sell(token_dict, inToken, outToken):
 
                     else:
                         # HASFEES = false
-                        if settings["EXCHANGE"].lower() == 'uniswap':
+                        if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                             # Special condition on Uniswap, to implement EIP-1559
                             transaction = routerContract.functions.swapExactTokensForTokens(
                                 amount,
@@ -3081,7 +3116,7 @@ def run():
                                 printt_err("- your node is not working well")
                                 printt_err("-------------------------------")
                                 token['_FAILED_TRANSACTIONS'] += 1
-                                preapprove(tokens)
+                                printt_debug("3095 _FAILED_TRANSACTIONS:", token['_FAILED_TRANSACTIONS'])
                             else:
                                 # transaction is a SUCCESS
                                 printt_ok("----------------------------------")
