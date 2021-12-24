@@ -599,7 +599,7 @@ def reload_tokens_file(tokens_path, load_message=True):
     #          2. the timestamp for the last modification of the file
     
     if load_message == True:
-        print(timestamp(), "Loading tokens from", tokens_path)
+        print(timestamp(), "Reloading tokens from", tokens_path)
 
     s = open(tokens_path, )
     tokens = json.load(s)
@@ -1588,8 +1588,11 @@ def check_approval(token, address, allowance_to_compare_with):
     contract = client.eth.contract(address=Web3.toChecksumAddress(address), abi=standardAbi)
     actual_allowance = contract.functions.allowance(Web3.toChecksumAddress(settings['WALLETADDRESS']), routerAddress).call()
 
+    printt_debug("actual_allowance 1591          :", actual_allowance)
+    printt_debug("allowance_to_compare_with 1592 :", allowance_to_compare_with)
+    
     allowance_request = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-    if actual_allowance < allowance_to_compare_with:
+    if actual_allowance < allowance_to_compare_with or actual_allowance == 0:
         if settings["EXCHANGE"] == 'quickswap':
 
             print("Revert to Zero To change approval")
@@ -3187,6 +3190,7 @@ def run():
             sleep(cooldown)
 
     except Exception as ee:
+        printt_debug("Debug 3193")
         if reload_tokens_file == True:
             reload_bot_settings(bot_settings)
             run()
