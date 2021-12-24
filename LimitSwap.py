@@ -2870,7 +2870,7 @@ def run():
         #   then run the rugdoctor check and prompt the user if they want to continue trading
         #   the token
         #
-        # TODO PRUNE: Prune tokens if the user doesn't want to trade them. Exit only if we don't have any more tokens left.
+        # TODO PRUNE: Prune tokens if the user doesn't want to trade them. Exit only if we don't have any more tokens left
         # TODO ARG: Implement an argument that auto accepts or prunes tokens that are rejected/accepted by the rugdoc check
         for token in tokens:
             
