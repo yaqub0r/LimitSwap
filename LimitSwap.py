@@ -1521,7 +1521,12 @@ def approve(address, amount):
 
     eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
-    if eth_balance > 0.05:
+    if base_symbol == "ETH":
+        minimumbalance = 0.05
+    else:
+        minimumbalance = 0.01
+
+    if eth_balance > minimumbalance:
         print("Estimating Gas Cost Using Web3")
         if settings['EXCHANGE'] == 'uniswap' or settings['EXCHANGE'] == 'uniswaptestnet':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
@@ -1575,10 +1580,7 @@ def approve(address, amount):
 
             return tx_hash
     else:
-        print(timestamp(),
-              "You have less than 0.05 ETH/BNB/FTM/MATIC or network gas token in your wallet, bot needs at least 0.05 to cover fees : please add some more in your wallet.")
-        logging.info(
-            "You have less than 0.05 ETH/BNB/FTM/MATIC or network gas token in your wallet, bot needs at least 0.05 to cover fees : please add some more in your wallet.")
+        printt_err("You have less than 0.05 ETH or 0.01 BNB/FTM/MATIC/etc. token in your wallet, bot needs more to cover fees : please add some more in your wallet")
         sleep(10)
         sys.exit()
 
@@ -1892,8 +1894,10 @@ def calculate_gas(token):
     if token['GAS'] == 'boost' or token['GAS'] == 'BOOST' or token['GAS'] == 'Boost':
         gas_check = client.eth.gasPrice
         gas_price = gas_check / 1000000000
+        printt_info("Current Gas Price =", gas_price)
         token['_GAS_TO_USE'] = (gas_price * ((int(token['BOOSTPERCENT'])) / 100)) + gas_price
-    
+        printt_info("Transaction will be created with gas =", 1 + token['BOOSTPERCENT'] / 100, "*", gas_price, "= ", token['_GAS_TO_USE'])
+
     else:
         token['_GAS_TO_USE'] = int(token['GAS'])
 
@@ -2358,7 +2362,6 @@ def buy(token_dict, inToken, outToken, pwd):
     printt_info("Placing New Buy Order for " + token_dict['SYMBOL'])
 
 
-
     if int(gaslimit) < 250000:
         printt_info("Your GASLIMIT parameter is too low : LimitSwap has forced it to 300000 otherwise your transaction would fail for sure. We advise you to raise it to 1000000.")
         gaslimit = 300000
@@ -2374,13 +2377,9 @@ def buy(token_dict, inToken, outToken, pwd):
 
     printt_debug("2335 Decimal(amount):", Decimal(amount))
     if balance > Decimal(amount):
-        if gas == 'boost':
-            gas_check = client.eth.gasPrice
-            gas_price = gas_check / 1000000000
-            gas = (gas_price * ((int(boost)) / 100)) + gas_price
-        else:
-            gas = int(gas)
-
+        # Calculate how much gas we should use for this token
+        calculate_gas(token_dict)
+        printt_debug("gas: 2380", token_dict['_GAS_TO_USE'])
         gaslimit = int(gaslimit)
         slippage = int(slippage)
         DECIMALS = decimals(inToken)
@@ -2394,13 +2393,13 @@ def buy(token_dict, inToken, outToken, pwd):
             while True:
                 if buynumber < amount_of_buys:
                     printt_info("Placing New Buy Order for wallet number:", buynumber)
-                    make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage, DECIMALS)
+                    make_the_buy(inToken, outToken, buynumber, pwd, amount, token_dict['_GAS_TO_USE'], gaslimit, gaspriority, routing, custom, slippage, DECIMALS)
                     buynumber += 1
                 else:
                     printt_ok("All BUYS orders have been sent - Stopping Bot")
                     sys.exit(0)
         else:
-            make_the_buy(inToken, outToken, 0, pwd, amount, gas, gaslimit, gaspriority, routing, custom, slippage, DECIMALS)
+            make_the_buy(inToken, outToken, 0, pwd, amount, token_dict['_GAS_TO_USE'], gaslimit, gaspriority, routing, custom, slippage, DECIMALS)
 
     else:
         printt_err("You don't have enough in your wallet to make the BUY order, bot stops", )
@@ -2896,13 +2895,19 @@ def run():
     quote = 0
     reload_tokens_file = False
 
+    # Determine minimum balance
+    if base_symbol == "ETH":
+        minimumbalance = 0.05
+    else:
+        minimumbalance = 0.01
+
     try:
         tokens = load_tokens_file(command_line_args.tokens, True)
 
         eth_balance = Web3.fromWei(client.eth.getBalance(settings['WALLETADDRESS']), 'ether')
 
-        if eth_balance < 0.05:
-            printt_err("You have less than 0.05 ETH/BNB/FTM/MATIC/etc. token in your wallet, bot needs at least 0.05 to cover fees : please add some more in your wallet")
+        if eth_balance < minimumbalance:
+            printt_err("You have less than 0.05 ETH or 0.01 BNB/FTM/MATIC/etc. token in your wallet, bot needs more to cover fees : please add some more in your wallet")
             sleep(10)
             exit(1)
 
