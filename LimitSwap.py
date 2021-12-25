@@ -1622,6 +1622,7 @@ def check_bnb_balance():
     print(timestamp(), "Current Wallet Balance is :", Web3.fromWei(balance, 'ether'), base_symbol)
     return balance
 
+
 def check_balance(address, symbol='UNKNOWN_TOKEN', display_quantity=True):
     # Function: check_balance
     # --------------------
@@ -1632,7 +1633,7 @@ def check_balance(address, symbol='UNKNOWN_TOKEN', display_quantity=True):
     # display_quantity - boolean to report on the number of tokens
     #
     # returns: the wallet's token balance
-
+    
     printt_debug("ENTER: check_balance()")
     balance = 0
     
@@ -1641,10 +1642,13 @@ def check_balance(address, symbol='UNKNOWN_TOKEN', display_quantity=True):
     balanceContract = client.eth.contract(address=address, abi=standardAbi)
     
     balance = balanceContract.functions.balanceOf(settings['WALLETADDRESS']).call()
-
-    print(timestamp(), "Current Wallet Balance is: " + str(balance / DECIMALS) + " " + symbol)
+    if display_quantity == True:
+        print(timestamp(), "Current Wallet Balance is: " + str(balance / DECIMALS) + " " + symbol)
+    else:
+        printt_debug("display_quantity=False --> Do not display balance")
     printt_debug("EXIT: check_balance()")
     return balance
+
 
 def fetch_pair(inToken, outToken):
     print(timestamp(), "Fetching Pair Address")
@@ -2429,7 +2433,9 @@ def sell(token_dict, inToken, outToken):
 
     print(timestamp(), "Placing Sell Order " + symbol)
     balance = Web3.fromWei(check_balance(inToken, symbol), 'ether')
+    DECIMALS = decimals(inToken)
 
+    printt_debug("2438 DECIMALS:", DECIMALS)
     # We ask the bot to check if your allowance is > to your balance. Use a 10000000000000000 multiplier for decimals.
     check_approval(token_dict, inToken, balance * 10000000000000000)
 
@@ -2438,12 +2444,16 @@ def sell(token_dict, inToken, outToken):
         printt_info(
         "Your GASLIMIT parameter is too low: LimitSwap has forced it to 300000 otherwise your transaction would fail for sure. We advise you to raise it to 1000000.")
 
-    if type(amount) == str:
+    # We check if
+    if amount == 'all' or amount == 'ALL' or amount == 'All':
         amount_check = balance
     else:
-        amount_check = Decimal(amount)
+        amount_check = amount
 
-    if balance >= Decimal(amount_check) and balance > 0.0000000000000001:
+    printt_debug("debug 2451 balance * DECIMALS     :", balance * DECIMALS)
+    printt_debug("debug 2452 amount_check:", amount_check)
+    
+    if balance  * DECIMALS > 0.0000000000001:
 
         if gas == 'boost' or gas == 'BOOST' or gas == 'Boost':
             gas_check = client.eth.gasPrice
@@ -2454,7 +2464,6 @@ def sell(token_dict, inToken, outToken):
 
         slippage = int(slippage)
         gaslimit = int(gaslimit)
-        DECIMALS = decimals(inToken)
 
         if amount == 'all' or amount == 'ALL' or amount == 'All' :
             balance = check_balance(inToken, symbol)
@@ -2878,6 +2887,7 @@ def sell(token_dict, inToken, outToken):
 
             return tx_hash
     else:
+        "Your balance is < 0.0000000000001, so LimitSwap won't sell it not to waste fees."
         pass
 
 def run():
