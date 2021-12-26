@@ -799,21 +799,28 @@ with open(file_path) as json_file:
 """""""""""""""""""""""""""
 //ERROR LOGGING
 """""""""""""""""""""""""""
-os.makedirs('./logs', exist_ok=True)
+# define dd/mm/YY date to create  logging files with date of the day
+# get current date and time
+current_datetime = datetime.today().strftime("%Y-%m-%d")
+str_current_datetime = str(current_datetime)
+# create an ERROR file object along with extension
+file_name = "./logs/errors-" + str_current_datetime + ".log"
+if not os.path.exists(file_name):
+    open(file_name, 'w').close()
 
-if not os.path.exists('./logs/errors.log'):
-    open('./logs/errors.log', 'w').close()
+# create an EXCEPTIONS file object along with extension
+file_name2 = "./logs/exceptions-" + str_current_datetime + ".log"
+if not os.path.exists(file_name2):
+    open(file_name2, 'w').close()
 
-if not os.path.exists('./logs/exceptions.log'):
-    open('./logs/exceptions.log', 'w').close()
 
 log_format = '%(levelname)s: %(asctime)s %(message)s'
-logging.basicConfig(filename='./logs/errors.log',
+logging.basicConfig(filename=file_name,
                     level=logging.INFO,
                     format=log_format)
 
 logger1 = logging.getLogger('1')
-logger1.addHandler(logging.FileHandler('./logs/exceptions.log'))
+logger1.addHandler(logging.FileHandler(file_name2))
 
 logging.info("*************************************************************************************")
 logging.info("For Help & To Learn More About how the bot works please visit our wiki here:")
@@ -1460,15 +1467,15 @@ def decimals(address):
 
 def check_logs():
     print(timestamp(), "Quickly Checking Log Size")
-    with open('./logs/errors.log') as f:
+    with open(file_name) as f:
         line_count = 0
         for line in f:
             line_count += 1
-        if line_count > 100:
-            with open('./logs/errors.log', "r") as f:
+        if line_count > 300:
+            with open(file_name, "r") as f:
                 lines = f.readlines()
 
-            with open('./logs/errors.log', "w") as f:
+            with open(file_name, "w") as f:
                 f.writelines(lines[20:])
 
     f.close()
