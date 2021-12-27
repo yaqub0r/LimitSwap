@@ -804,6 +804,8 @@ with open(file_path) as json_file:
 """""""""""""""""""""""""""
 // LOGGING
 """""""""""""""""""""""""""
+os.makedirs('./logs', exist_ok=True)
+
 # define dd/mm/YY date to create  logging files with date of the day
 # get current date and time
 current_datetime = datetime.today().strftime("%Y-%m-%d")
