@@ -3373,7 +3373,7 @@ try:
 
     # Check for version
     #
-    version = 3.55
+    version = 3.56
     printt("YOUR BOT IS CURRENTLY RUNNING VERSION " + str(version), write_to_log=True)
     check_release()
 
