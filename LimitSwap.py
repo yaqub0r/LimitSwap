@@ -3184,7 +3184,8 @@ def run():
                 load_token_file_increment = load_token_file_increment + 1
             
             for token in tokens:
-                
+                printt_debug("entering token :", token['SYMBOL'])
+    
                 if token['ENABLED'] == 'true':
                     
                     # Set the checksum addressed for the addresses we're working with
@@ -3205,43 +3206,41 @@ def run():
                     #       1/ LIQUIDITYINNATIVETOKEN = true  --> we will snipe using ETH / BNB liquidity --> we use check_pool with weth
                     #       2/ LIQUIDITYINNATIVETOKEN = false --> we will snipe using Custom Base Pair    --> we use check_pool with outToken
                     #
-                    printt_debug("token['_LIQUIDITY_READY']:", token['_LIQUIDITY_READY'])
+                    printt_debug("token['_LIQUIDITY_READY']:", token['_LIQUIDITY_READY'], "for token :", token['SYMBOL'])
                     if token['_LIQUIDITY_READY'] == False:
                         if token['LIQUIDITYINNATIVETOKEN'] == 'true':
                             try:
                                 pool = check_pool(inToken, weth, token['BASESYMBOL'])
-                                printt_debug("3215 pool:", pool)
-                                if pool == 0:
-                                    printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
-                                    break
-                                else:
+                                
+                                if pool != 0:
                                     token['_LIQUIDITY_READY'] = True
                                     printt_info("Found liquidity for", token['SYMBOL'])
-                            
-                            except Exception:
-                                printt_debug("3221 pool:", pool)
-                                printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
-                                break
-                                
-                            else:
-                                printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
-                                break
+                                    pass
+                                else:
+                                    printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
+                                    continue
 
+                            except Exception:
+                                printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
+                                continue
+                                
 
                         else:
                             # token['LIQUIDITYINNATIVETOKEN'] == 'false'
                             try:
                                 pool = check_pool(inToken, outToken, token['BASESYMBOL'])
-                                if pool == 0:
-                                    printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
-                                    break
-                                else:
+                                
+                                if pool != 0:
                                     token['_LIQUIDITY_READY'] = True
                                     printt_info("Found liquidity for", token['SYMBOL'])
+                                    pass
+                                else:
+                                    printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
+                                    continue
                             
                             except Exception:
                                 printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
-                                break
+                                continue
                     
                     #
                     #  PRICE CHECK
@@ -3275,8 +3274,7 @@ def run():
                     #   the user that we've reached the maximum number of tokens, check for other criteria to buy.
                     #
                     
-                    if quote != 0 and quote < Decimal(token['BUYPRICEINBASE']) and token[
-                        '_REACHED_MAX_TOKENS'] == False:
+                    if quote != 0 and quote < Decimal(token['BUYPRICEINBASE']) and token['_REACHED_MAX_TOKENS'] == False:
                         
                         #
                         # OPEN TRADE CHECK
@@ -3464,7 +3462,7 @@ try:
     
     # Check for version
     #
-    version = 3.56
+    version = 3.58
     printt("YOUR BOT IS CURRENTLY RUNNING VERSION " + str(version), write_to_log=True)
     check_release()
     
