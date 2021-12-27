@@ -8,6 +8,11 @@ LimitSwap is a trading bot for UniSwap & Many Other DEXs. It has the ability to 
 &nbsp;
 
 ## HOW TO INSTALL LimitSwap
+There are 2 ways to install LimitSwap : 
+
+&nbsp;
+&nbsp;
+
 ### 1. Run The Python Code Locally (this is most ideal and can work on any OS)
 
 Here is a tutorial step-by-step: 
