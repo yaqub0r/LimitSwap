@@ -1493,10 +1493,9 @@ def decode_key():
 
 def check_release():
     try:
-        url = 'https://api.github.com/repos/CryptoGnome/LimitSwap/releases/latest'
+        url = 'https://api.github.com/repos/tsarbuig2/LimitSwap/releases/latest'
         r = requests.get(url).json()['tag_name']
-        print("Checking Latest Release Version on Github, Please Make Sure You are Staying Updated = ", r)
-        logging.info("Checking Latest Release Version on Github, Please Make Sure You are Staying Updated = " + r)
+        printt("Checking Latest Release Version on Github, Please Make Sure You are Staying Updated = ", r, write_to_log=True)
     except Exception:
         r = "github api down, please ignore"
 
@@ -3369,12 +3368,11 @@ try:
     # The LIMIT balance of the user.
     true_balance = auth()
 
-    # I removed the lines below because we don't use releases much anymore
-    # -------------------------
-    # version = 3.44
-    # logging.info("YOUR BOT IS CURRENTLY RUNNING VERSION " + str(version))
-    # print("YOUR BOT IS CURRENTLY RUNNING VERSION " + str(version))
-    # check_release()
+    # Check for version
+    #
+    version = 3.55
+    printt("YOUR BOT IS CURRENTLY RUNNING VERSION " + str(version), write_to_log=True)
+    check_release()
 
     if true_balance >= 50:
         print(timestamp(), "Professional Subscriptions Active")
