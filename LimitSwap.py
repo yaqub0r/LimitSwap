@@ -259,7 +259,7 @@ def printt_repeating(token_dict, message, print_frequency=500):
         bot_settings['_NEED_NEW_LINE'] = True
         repeated_message_quantity += 1
     else:
-        printt_err(message)
+        printt_err(message, write_to_log=False)
         repeated_message_quantity = 0
     
     token_dict['_LAST_MESSAGE'] = message
@@ -1579,6 +1579,11 @@ def approve(address, amount):
         if settings['EXCHANGE'] == 'uniswap' or settings['EXCHANGE'] == 'uniswaptestnet':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
             print("Current Gas Price =", gas)
+            
+        elif settings['EXCHANGE'] == 'pancakeswap' or settings['EXCHANGE'] == 'pancakeswaptestnet':
+            gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
+            print("Current Gas Price = ", gas)
+
         
         elif settings['EXCHANGE'] == 'pancakeswap' or settings['EXCHANGE'] == 'pancakeswaptestnet':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
@@ -3208,23 +3213,37 @@ def run():
                         if token['LIQUIDITYINNATIVETOKEN'] == 'true':
                             try:
                                 pool = check_pool(inToken, weth, token['BASESYMBOL'])
-                                token['_LIQUIDITY_READY'] = True
-                                printt_info("Found liquidity for", token['SYMBOL'])
+                                printt_debug("3215 pool:", pool)
+                                if pool == 0:
+                                    printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
+                                    break
+                                else:
+                                    token['_LIQUIDITY_READY'] = True
+                                    printt_info("Found liquidity for", token['SYMBOL'])
                             
                             except Exception:
-                                printt_repeating(token, token[
-                                    'SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
+                                printt_debug("3221 pool:", pool)
+                                printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
                                 break
-                        
+                                
+                            else:
+                                printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
+                                break
+
+
                         else:
+                            # token['LIQUIDITYINNATIVETOKEN'] == 'false'
                             try:
                                 pool = check_pool(inToken, outToken, token['BASESYMBOL'])
-                                token['_LIQUIDITY_READY'] = True
-                                printt_info("Found liquidity for", token['SYMBOL'])
+                                if pool == 0:
+                                    printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
+                                    break
+                                else:
+                                    token['_LIQUIDITY_READY'] = True
+                                    printt_info("Found liquidity for", token['SYMBOL'])
                             
                             except Exception:
-                                printt_repeating(token, token[
-                                    'SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
+                                printt_repeating(token, token['SYMBOL'] + " Not Listed For Trade Yet... waiting for liquidity to be added on exchange")
                                 break
                     
                     #
@@ -3237,6 +3256,7 @@ def run():
                                         token['USECUSTOMBASEPAIR'], token['LIQUIDITYINNATIVETOKEN'],
                                         token['BUYPRICEINBASE'], token['SELLPRICEINBASE'], token['STOPLOSSPRICEINBASE'])
                     
+                    printt_debug("quote 3245 :", quote)
                     if token['_ALL_TIME_HIGH'] == 0 and token['_ALL_TIME_LOW'] == 0:
                         token['_ALL_TIME_HIGH'] = quote
                         token['_ALL_TIME_LOW'] = quote
@@ -3347,10 +3367,10 @@ def run():
                     
                     price_conditions_met = False
                     
-                    if token['_INFORMED_SELL'] == False:
-                        printt_info("You own more tokens than your MAXTOKENS parameter for", token['SYMBOL'],
-                                    " Looking to sell this position")
-                        token['_INFORMED_SELL'] = True
+                    # if token['_INFORMED_SELL'] == False:
+                    #     printt_info("You own more tokens than your MAXTOKENS parameter for", token['SYMBOL'],
+                    #                 " Looking to sell this position")
+                    token['_INFORMED_SELL'] = True
                     
                     # Looking to dump this token as soon as it drops <PUMP> percentage
                     if isinstance(command_line_args.pump, int) and command_line_args.pump > 0:
