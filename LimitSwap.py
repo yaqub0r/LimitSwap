@@ -1486,6 +1486,7 @@ def check_logs():
 
     f.close()
 
+
 def decode_key():
     printt_debug("ENTER decode_key")
     private_key = settings['LIMITWALLETPRIVATEKEY']
