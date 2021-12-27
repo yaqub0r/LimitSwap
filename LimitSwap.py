@@ -1576,15 +1576,12 @@ def approve(address, amount):
     
     if eth_balance > minimumbalance:
         print("Estimating Gas Cost Using Web3")
-        if settings['EXCHANGE'] == 'uniswap' or settings['EXCHANGE'] == 'uniswaptestnet':
+        if settings['EXCHANGE'] == 'uniswap':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
             print("Current Gas Price =", gas)
-            
-        elif settings['EXCHANGE'] == 'pancakeswap' or settings['EXCHANGE'] == 'pancakeswaptestnet':
-            gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
+        elif settings['EXCHANGE'] == 'uniswaptestnet':
+            gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(200) / 100)
             print("Current Gas Price = ", gas)
-
-        
         elif settings['EXCHANGE'] == 'pancakeswap' or settings['EXCHANGE'] == 'pancakeswaptestnet':
             gas = (((client.eth.gasPrice) / 1000000000)) + ((client.eth.gasPrice) / 1000000000) * (int(20) / 100)
             print("Current Gas Price = ", gas)
