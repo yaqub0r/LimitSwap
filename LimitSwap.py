@@ -2091,24 +2091,6 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                     # USECUSTOMBASEPAIR = false
                     # for all the rest of exchanges with Modified = false
                     
-                    printt("------------------------------------------------------------------------",
-                           write_to_log=True)
-                    printt("temporary log write to make some investigations",
-                           write_to_log=True)
-                    printt("------------------------------------------------------------------------",
-                           write_to_log=True)
-                    printt("amountOutMin:", amountOutMin, write_to_log=True)
-                    printt("weth:", weth, write_to_log=True)
-                    printt("outToken:", outToken, write_to_log=True)
-                    printt("walletused:", walletused, write_to_log=True)
-                    printt("deadline:", deadline, write_to_log=True)
-                    printt("gas:", gas, write_to_log=True)
-                    printt("gaspriority:", gaspriority, write_to_log=True)
-                    printt("gaslimit:", gaslimit, write_to_log=True)
-                    printt("amount:", amount, write_to_log=True)
-                    printt("------------------------------------------------------------------------",
-                           write_to_log=True)
-
                     logging.info("make_the_buy condition 4")
                     transaction = routerContract.functions.swapExactETHForTokens(
                         amountOutMin,
