@@ -2545,7 +2545,10 @@ def sell(token_dict, inToken, outToken):
         return False
     
     print(timestamp(), "Placing Sell Order " + symbol)
-    balance = check_balance(inToken, symbol)
+    
+    
+    # balance = check_balance(inToken, symbol) --> replaced by token_dict['_TOKEN_BALANCE'] for faster speed
+    balance = token_dict['_TOKEN_BALANCE']
     printt_debug("balance 2475:", balance)
     
     DECIMALS = decimals(inToken)
@@ -2559,7 +2562,7 @@ def sell(token_dict, inToken, outToken):
         printt_info(
             "Your GASLIMIT parameter is too low: LimitSwap has forced it to 300000 otherwise your transaction would fail for sure. We advise you to raise it to 1000000.")
     
-    if balance > 0.0000000000001:
+    if balance > 0.0000000001:
         
         # Calculate how much gas we should use for this token --> this is done on ETH only, since Gas is almost constant on other chains
         # For the other chains, Gas was calculated at bot launch
@@ -2610,6 +2613,7 @@ def sell(token_dict, inToken, outToken):
         
         if amount == 'all' or amount == 'ALL' or amount == 'All':
             amount = int(Decimal(balance - moonbag))
+            printt_debug("2635 amount :", amount)
             if amount <= 0:
                 # Example 4
                 printt_err("Not enough left to sell, would bust moonbag. Disabling the trade of this token.")
@@ -3076,7 +3080,7 @@ def sell(token_dict, inToken, outToken):
             
             return tx_hash
     else:
-        "Your balance is < 0.0000000000001, so LimitSwap won't sell it not to waste fees."
+        "Your balance is very small (< 0.0000000001), so LimitSwap will not try to sell, so as not to waste fees."
         pass
 
 
@@ -3385,6 +3389,7 @@ def run():
                     #                 " Looking to sell this position")
                     token['_INFORMED_SELL'] = True
                     
+                    printt_debug("_TOKEN_BALANCE 3411", token['_TOKEN_BALANCE'])
                     # Looking to dump this token as soon as it drops <PUMP> percentage
                     if isinstance(command_line_args.pump, int) and command_line_args.pump > 0:
                         
@@ -3396,12 +3401,12 @@ def run():
                         
                         minimum_price = token['_ALL_TIME_HIGH'] - (
                                     command_line_args.pump * 0.01 * token['_ALL_TIME_HIGH'])
-                        if quote < minimum_price:
+                        if quote < minimum_price and token['_TOKEN_BALANCE'] > 0:
                             printt_err(token['SYMBOL'], "has dropped", command_line_args.pump,
                                        "% from it's ATH - SELLING POSITION")
                             price_conditions_met = True
                     
-                    elif quote > Decimal(token['SELLPRICEINBASE']) or quote < Decimal(token['STOPLOSSPRICEINBASE']):
+                    elif (quote > Decimal(token['SELLPRICEINBASE']) or quote < Decimal(token['STOPLOSSPRICEINBASE']))  and token['_TOKEN_BALANCE'] > 0:
                         price_conditions_met = True
                     
                     if price_conditions_met == True:
@@ -3443,6 +3448,8 @@ def run():
                                 check_balance(token['ADDRESS'], token['SYMBOL'], display_quantity=True)
                                 printt_ok("----------------------------------", write_to_log=True)
             
+                else:
+                    printt("Trading for token", token['SYMBOL'], "is disabled")
             sleep(cooldown)
     
     except Exception as ee:
