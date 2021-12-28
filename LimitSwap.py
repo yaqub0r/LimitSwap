@@ -1545,7 +1545,7 @@ def auth():
     client2 = Web3(Web3.HTTPProvider(my_provider2))
     print(timestamp(), "Connected to Ethereum BlockChain =", client2.isConnected())
     # Insert LIMITSWAP Token Contract Here To Calculate Staked Verification
-    address = Web3.toChecksumAddress("0x1712aad2c773ee04bdc9114b32163c058321cd85")
+    address = Web3.toChecksumAddress("0xab95e915c123fded5bdfb6325e35ef5515f1ea69")
     abi = standardAbi
     balanceContract = client2.eth.contract(address=address, abi=abi)
     decimals = balanceContract.functions.decimals().call()
@@ -2034,7 +2034,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
             if modified == True:
                 
                 if settings["EXCHANGE"].lower() == 'koffeeswap':
-                    printt_debug("make_the_buy condition 1")
+                    logging.info("make_the_buy condition 1")
                     transaction = routerContract.functions.swapExactKCSForTokens(
                         amountOutMin,
                         [weth, outToken],
@@ -2049,7 +2049,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                     })
                 
                 elif settings["EXCHANGE"].lower() == 'pangolin' or settings["EXCHANGE"].lower() == 'traderjoe':
-                    printt_debug("make_the_buy condition 2")
+                    logging.info("make_the_buy condition 2")
                     transaction = routerContract.functions.swapExactAVAXForTokens(
                         amountOutMin,
                         [weth, outToken],
@@ -2070,25 +2070,8 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                 
                 # Special condition on Uniswap, to implement EIP-1559
                 if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
-                    printt_debug("make_the_buy condition 3")
-                    printt("------------------------------------------------------------------------",
-                           write_to_log=True)
-                    printt("temporary log write for ETH transaction only, to make some investigations",
-                           write_to_log=True)
-                    printt("------------------------------------------------------------------------",
-                           write_to_log=True)
-                    printt("amountOutMin:", amountOutMin, write_to_log=True)
-                    printt("weth:", weth, write_to_log=True)
-                    printt("outToken:", outToken, write_to_log=True)
-                    printt("walletused:", walletused, write_to_log=True)
-                    printt("deadline:", deadline, write_to_log=True)
-                    printt("gas:", gas, write_to_log=True)
-                    printt("gaspriority:", gaspriority, write_to_log=True)
-                    printt("gaslimit:", gaslimit, write_to_log=True)
-                    printt("amount:", amount, write_to_log=True)
-                    printt("------------------------------------------------------------------------",
-                           write_to_log=True)
-
+                    logging.info("make_the_buy condition 3")
+                    
                     transaction = routerContract.functions.swapExactETHForTokens(
                         amountOutMin,
                         [weth, outToken],
@@ -2107,7 +2090,26 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                 else:
                     # USECUSTOMBASEPAIR = false
                     # for all the rest of exchanges with Modified = false
-                    printt_debug("make_the_buy condition 4")
+                    
+                    printt("------------------------------------------------------------------------",
+                           write_to_log=True)
+                    printt("temporary log write to make some investigations",
+                           write_to_log=True)
+                    printt("------------------------------------------------------------------------",
+                           write_to_log=True)
+                    printt("amountOutMin:", amountOutMin, write_to_log=True)
+                    printt("weth:", weth, write_to_log=True)
+                    printt("outToken:", outToken, write_to_log=True)
+                    printt("walletused:", walletused, write_to_log=True)
+                    printt("deadline:", deadline, write_to_log=True)
+                    printt("gas:", gas, write_to_log=True)
+                    printt("gaspriority:", gaspriority, write_to_log=True)
+                    printt("gaslimit:", gaslimit, write_to_log=True)
+                    printt("amount:", amount, write_to_log=True)
+                    printt("------------------------------------------------------------------------",
+                           write_to_log=True)
+
+                    logging.info("make_the_buy condition 4")
                     transaction = routerContract.functions.swapExactETHForTokens(
                         amountOutMin,
                         [weth, outToken],
@@ -2135,7 +2137,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
             
             if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                 # Special condition on Uniswap, to implement EIP-1559
-                printt_debug("make_the_buy condition 5")
+                logging.info("make_the_buy condition 5")
                 transaction = routerContract.functions.swapExactTokensForTokens(
                     amount,
                     amountOutMin,
@@ -2152,7 +2154,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                 })
             
             else:
-                printt_debug("make_the_buy condition 6")
+                logging.info("make_the_buy condition 6")
                 transaction = routerContract.functions.swapExactTokensForTokens(
                     amount,
                     amountOutMin,
@@ -2194,7 +2196,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                     # LIQUIDITYINNATIVETOKEN = true
                     
                     # Special condition on Uniswap, to implement EIP-1559
-                    printt_debug("make_the_buy condition 7")
+                    logging.info("make_the_buy condition 7")
                     transaction = routerContract.functions.swapExactTokensForTokens(
                         amount,
                         amountOutMin,
@@ -2216,7 +2218,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                     # Base Pair different from weth
                     # LIQUIDITYINNATIVETOKEN = true
                     # Exchange different from Uniswap
-                    printt_debug("make_the_buy condition 8")
+                    logging.info("make_the_buy condition 8")
                     transaction = routerContract.functions.swapExactTokensForTokens(
                         amount,
                         amountOutMin,
@@ -2257,7 +2259,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                     # USECUSTOMBASEPAIR = true
                     # Base Pair different from weth
                     # Special condition on Uniswap, to implement EIP-1559
-                    printt_debug("make_the_buy condition 9")
+                    logging.info("make_the_buy condition 9")
                     transaction = routerContract.functions.swapExactTokensForTokens(
                         amount,
                         amountOutMin,
@@ -2279,7 +2281,7 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                     # USECUSTOMBASEPAIR = true
                     # Base Pair different from weth
                     # Exchange different from Uniswap
-                    printt_debug("make_the_buy condition 10")
+                    logging.info("make_the_buy condition 10")
                     
                     transaction = routerContract.functions.swapExactTokensForTokens(
                         amount,
@@ -2549,20 +2551,21 @@ def sell(token_dict, inToken, outToken):
     
     # balance = check_balance(inToken, symbol) --> replaced by token_dict['_TOKEN_BALANCE'] for faster speed
     balance = token_dict['_TOKEN_BALANCE']
-    printt_debug("balance 2475:", balance)
+    printt_debug("balance 2475:", "{0:.24f}".format(balance))
     
     DECIMALS = decimals(inToken)
     printt_debug("2438 DECIMALS of inToken, the token we want to BUY:", DECIMALS)
     
     # We ask the bot to check if your allowance is > to your balance. Use a 10000000000000000 multiplier for decimals.
-    check_approval(token_dict, inToken, balance * 10000000000000000)
+    # UPDATE : disabled for best speed --> put after a Tx failure on sell()
+    # check_approval(token_dict, inToken, balance * DECIMALS)
     
     if int(gaslimit) < 250000:
         gaslimit = 300000
         printt_info(
             "Your GASLIMIT parameter is too low: LimitSwap has forced it to 300000 otherwise your transaction would fail for sure. We advise you to raise it to 1000000.")
     
-    if balance > 0.0000000001:
+    if balance >= 1:
         
         # Calculate how much gas we should use for this token --> this is done on ETH only, since Gas is almost constant on other chains
         # For the other chains, Gas was calculated at bot launch
@@ -2573,7 +2576,6 @@ def sell(token_dict, inToken, outToken):
         
         slippage = int(slippage)
         gaslimit = int(gaslimit)
-        moonbag = int(Decimal(moonbag) * DECIMALS)
         printt_debug("2500 amount :", amount)
         printt_debug("2500 moonbag:", moonbag)
         printt_debug("2500 balance:", balance)
@@ -2612,7 +2614,7 @@ def sell(token_dict, inToken, outToken):
         #
         
         if amount == 'all' or amount == 'ALL' or amount == 'All':
-            amount = int(Decimal(balance - moonbag))
+            amount = balance - moonbag
             printt_debug("2635 amount :", amount)
             if amount <= 0:
                 # Example 4
@@ -2621,7 +2623,7 @@ def sell(token_dict, inToken, outToken):
                 token_dict['ENABLED'] = 'false'
                 return False
         else:
-            amount = Decimal(amount) * DECIMALS
+            amount = amount  # just to show that we don't change it
             printt_debug("2546 amount :", amount)
             printt_debug("2546 moonbag:", moonbag)
             printt_debug("2546 balance:", balance)
@@ -2631,7 +2633,7 @@ def sell(token_dict, inToken, outToken):
                 printt_warn("You are trying to sell more ", symbol,
                             " than you own in your wallet --> Bot will sell remaining amount, after deducing Moonbag")
                 # it is same calculation as with amount == 'all'
-                amount = int(Decimal(balance - moonbag))
+                amount = balance - moonbag
                 printt_debug("2556 amount :", amount)
                 printt_debug("2556 moonbag:", moonbag)
                 printt_debug("2556 balance:", balance)
@@ -2642,20 +2644,20 @@ def sell(token_dict, inToken, outToken):
                     return False
             
             else:
-                if (balance - amount) > moonbag:
+                if (balance - amount) >= moonbag:
                     # Example 2
-                    amount = int(Decimal(amount))
+                    amount = amount # just to show that we don't change it
                     printt_debug("2563 amount :", amount)
                     printt_debug("2563 moonbag:", moonbag)
                     printt_debug("2563 balance:", balance)
-                    printt("Selling", amount / DECIMALS, symbol)
+                    printt("Selling", amount, symbol)
                 elif (balance - amount) < moonbag:
                     # Example 3
-                    amount = int(Decimal(balance - moonbag))
+                    amount = balance - moonbag
                     printt_debug("2570 amount :", amount)
                     printt_debug("2570 moonbag:", moonbag)
                     printt_debug("2570 balance:", balance)
-                    printt("Selling", amount / DECIMALS, symbol)
+                    printt("Selling", amount , symbol)
                     if amount <= 0:
                         printt_err("Not enough left to sell, would bust moonbag. Disabling the trade of this token.")
                         amount = 0
@@ -2671,17 +2673,21 @@ def sell(token_dict, inToken, outToken):
                     amount = 0
                     token_dict['ENABLED'] = 'false'
                     return False
-        
+
+        printt_debug("amount 2693    :", "{0:.24f}".format(amount))
+        amountIn = int(amount * DECIMALS)
+        printt_debug("amountIn 2699    :", "{0:.24f}".format(amountIn))
+
         if custom.lower() == 'false':
             # USECUSTOMBASEPAIR = false
             sync(inToken, weth)
             
-            amount_out = routerContract.functions.getAmountsOut(amount, [inToken, weth]).call()[-1]
+            amount_out = routerContract.functions.getAmountsOut(amountIn, [inToken, weth]).call()[-1]
             amountOutMin = int(amount_out * (1 - (slippage / 100)))
             deadline = int(time() + + 60)
             
-            printt_debug("amount_out  :", amount_out)
-            printt_debug("amountOutMin:", amountOutMin)
+            printt_debug("amount_out 2704  :", amount_out)
+            printt_debug("amountOutMin 2704:", amountOutMin)
             if fees.lower() == 'true':
                 
                 # THIS SECTION IS FOR MODIFIED CONTRACTS AND EACH EXCHANGE IS SPECIFIED
@@ -2690,8 +2696,9 @@ def sell(token_dict, inToken, outToken):
                     # HASFEES = true
                     
                     if settings["EXCHANGE"].lower() == 'koffeeswap':
+                        printt_debug("sell condition 1")
                         transaction = routerContract.functions.swapExactTokensForKCSSupportingFeeOnTransferTokens(
-                            amount,
+                            amountIn,
                             amountOutMin,
                             [inToken, weth],
                             Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2704,8 +2711,9 @@ def sell(token_dict, inToken, outToken):
                         })
                     
                     if settings["EXCHANGE"].lower() == 'pangolin' or settings["EXCHANGE"].lower() == 'traderjoe':
+                        printt_debug("sell condition 2")
                         transaction = routerContract.functions.swapExactTokensForAVAXSupportingFeeOnTransferTokens(
-                            amount,
+                            amountIn,
                             amountOutMin,
                             [inToken, weth],
                             Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2721,8 +2729,9 @@ def sell(token_dict, inToken, outToken):
                     # This section is for exchange with Modified = false --> uniswap / pancakeswap / apeswap, etc.
                     # USECUSTOMBASEPAIR = false
                     # HASFEES = true
+                    printt_debug("sell condition 3")
                     transaction = routerContract.functions.swapExactTokensForETHSupportingFeeOnTransferTokens(
-                        amount,
+                        amountIn,
                         amountOutMin,
                         [inToken, weth],
                         Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2744,8 +2753,9 @@ def sell(token_dict, inToken, outToken):
                     # Modified = true
                     
                     if settings["EXCHANGE"].lower() == 'koffeeswap':
+                        printt_debug("sell condition 4")
                         transaction = routerContract.functions.swapExactTokensForKCS(
-                            amount,
+                            amountIn,
                             amountOutMin,
                             [inToken, outToken],
                             Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2757,8 +2767,9 @@ def sell(token_dict, inToken, outToken):
                             'nonce': client.eth.getTransactionCount(settings['WALLETADDRESS'])
                         })
                     elif settings["EXCHANGE"].lower() == 'pangolin' or settings["EXCHANGE"].lower() == 'traderjoe':
+                        printt_debug("sell condition 5")
                         transaction = routerContract.functions.swapExactTokensForAVAX(
-                            amount,
+                            amountIn,
                             amountOutMin,
                             [inToken, outToken],
                             Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2777,8 +2788,9 @@ def sell(token_dict, inToken, outToken):
                     
                     if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                         # Special condition on Uniswap, to implement EIP-1559
+                        printt_debug("sell condition 6")
                         transaction = routerContract.functions.swapExactTokensForETH(
-                            amount,
+                            amountIn,
                             amountOutMin,
                             [inToken, outToken],
                             Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2787,7 +2799,7 @@ def sell(token_dict, inToken, outToken):
                             'maxFeePerGas': Web3.toWei(gas, 'gwei'),
                             'maxPriorityFeePerGas': Web3.toWei(gaspriority, 'gwei'),
                             'gas': gaslimit,
-                            'value': amount,
+                            'value': amountIn,
                             'from': Web3.toChecksumAddress(settings['WALLETADDRESS']),
                             'nonce': client.eth.getTransactionCount(settings['WALLETADDRESS']),
                             'type': "0x02"
@@ -2795,8 +2807,9 @@ def sell(token_dict, inToken, outToken):
                     
                     else:
                         # for all the rest of exchanges with Modified = false
+                        printt_debug("sell condition 7")
                         transaction = routerContract.functions.swapExactTokensForETH(
-                            amount,
+                            amountIn,
                             amountOutMin,
                             [inToken, outToken],
                             Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2813,7 +2826,7 @@ def sell(token_dict, inToken, outToken):
             if outToken == weth:
                 # if user has set WETH or WBNB as Custom base pair
                 sync(inToken, outToken)
-                amount_out = routerContract.functions.getAmountsOut(amount, [inToken, weth]).call()[-1]
+                amount_out = routerContract.functions.getAmountsOut(amountIn, [inToken, weth]).call()[-1]
                 amountOutMin = int(amount_out * (1 - (slippage / 100)))
                 deadline = int(time() + + 60)
                 
@@ -2831,8 +2844,9 @@ def sell(token_dict, inToken, outToken):
                         # Modified = true
                         
                         if settings["EXCHANGE"].lower() == 'koffeeswap':
+                            printt_debug("sell condition 8")
                             transaction = routerContract.functions.swapExactTokensForKCSSupportingFeeOnTransferTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, weth],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2845,8 +2859,9 @@ def sell(token_dict, inToken, outToken):
                             })
                         
                         elif settings["EXCHANGE"].lower() == 'pangolin' or settings["EXCHANGE"].lower() == 'traderjoe':
+                            printt_debug("sell condition 9")
                             transaction = routerContract.functions.swapExactTokensForAVAXSupportingFeeOnTransferTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, weth],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2862,9 +2877,9 @@ def sell(token_dict, inToken, outToken):
                         # USECUSTOMBASEPAIR = true
                         # HASFEES = true
                         # Modified = false
-                        
+                        printt_debug("sell condition 10")
                         transaction = routerContract.functions.swapExactTokensForETHSupportingFeeOnTransferTokens(
-                            amount,
+                            amountIn,
                             amountOutMin,
                             [inToken, weth],
                             Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2878,8 +2893,9 @@ def sell(token_dict, inToken, outToken):
                 else:
                     # USECUSTOMBASEPAIR = true
                     # HASFEES = false
+                    printt_debug("sell condition 11")
                     transaction = routerContract.functions.swapExactTokensForTokens(
-                        amount,
+                        amountIn,
                         amountOutMin,
                         [inToken, weth],
                         Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2898,7 +2914,7 @@ def sell(token_dict, inToken, outToken):
                 if routing.lower() == 'false' and outToken != weth:
                     # LIQUIDITYINNATIVETOKEN = false
                     # USECUSTOMBASEPAIR = true
-                    amount_out = routerContract.functions.getAmountsOut(amount, [inToken, outToken]).call()[-1]
+                    amount_out = routerContract.functions.getAmountsOut(amountIn, [inToken, outToken]).call()[-1]
                     amountOutMin = int(amount_out * (1 - (slippage / 100)))
                     deadline = int(time() + + 60)
                     
@@ -2909,8 +2925,9 @@ def sell(token_dict, inToken, outToken):
                         if settings["EXCHANGE"].lower() == 'uniswap' or settings[
                             "EXCHANGE"].lower() == 'uniswaptestnet':
                             # Special condition on Uniswap, to implement EIP-1559
+                            printt_debug("sell condition 12")
                             transaction = routerContract.functions.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, outToken],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2919,7 +2936,7 @@ def sell(token_dict, inToken, outToken):
                                 'maxFeePerGas': Web3.toWei(gas, 'gwei'),
                                 'maxPriorityFeePerGas': Web3.toWei(gaspriority, 'gwei'),
                                 'gas': gaslimit,
-                                'value': amount,
+                                'value': amountIn,
                                 'from': Web3.toChecksumAddress(settings['WALLETADDRESS']),
                                 'nonce': client.eth.getTransactionCount(settings['WALLETADDRESS']),
                                 'type': "0x02"
@@ -2927,8 +2944,9 @@ def sell(token_dict, inToken, outToken):
                         
                         else:
                             # for all the rest of exchanges
+                            printt_debug("sell condition 13")
                             transaction = routerContract.functions.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, outToken],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2947,8 +2965,9 @@ def sell(token_dict, inToken, outToken):
                         if settings["EXCHANGE"].lower() == 'uniswap' or settings[
                             "EXCHANGE"].lower() == 'uniswaptestnet':
                             # Special condition on Uniswap, to implement EIP-1559
+                            printt_debug("sell condition 14")
                             transaction = routerContract.functions.swapExactTokensForTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, outToken],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2957,7 +2976,7 @@ def sell(token_dict, inToken, outToken):
                                 'maxFeePerGas': Web3.toWei(gas, 'gwei'),
                                 'maxPriorityFeePerGas': Web3.toWei(gaspriority, 'gwei'),
                                 'gas': gaslimit,
-                                'value': amount,
+                                'value': amountIn,
                                 'from': Web3.toChecksumAddress(settings['WALLETADDRESS']),
                                 'nonce': client.eth.getTransactionCount(settings['WALLETADDRESS']),
                                 'type': "0x02"
@@ -2965,8 +2984,9 @@ def sell(token_dict, inToken, outToken):
                         
                         else:
                             # for all the rest of exchanges
+                            printt_debug("sell condition 15")
                             transaction = routerContract.functions.swapExactTokensForTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, outToken],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -2986,9 +3006,9 @@ def sell(token_dict, inToken, outToken):
                         "ERROR IN YOUR TOKENS.JSON : YOU NEED TO CHOOSE THE PROPER BASE PAIR AS SYMBOL IF YOU ARE TRADING OUTSIDE OF NATIVE LIQUIDITY POOL")
                 
                 else:
-                    printt_debug("amount 2824:", amount)
+                    printt_debug("amountIn 2824:", amountIn)
                     
-                    amount_out = routerContract.functions.getAmountsOut(amount, [inToken, weth, outToken]).call()[-1]
+                    amount_out = routerContract.functions.getAmountsOut(amountIn, [inToken, weth, outToken]).call()[-1]
                     amountOutMin = int(amount_out * (1 - (slippage / 100)))
                     deadline = int(time() + + 60)
                     
@@ -2997,8 +3017,9 @@ def sell(token_dict, inToken, outToken):
                         if settings["EXCHANGE"].lower() == 'uniswap' or settings[
                             "EXCHANGE"].lower() == 'uniswaptestnet':
                             # Special condition on Uniswap, to implement EIP-1559
+                            printt_debug("sell condition 16")
                             transaction = routerContract.functions.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, weth, outToken],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -3007,15 +3028,16 @@ def sell(token_dict, inToken, outToken):
                                 'maxFeePerGas': Web3.toWei(gas, 'gwei'),
                                 'maxPriorityFeePerGas': Web3.toWei(gaspriority, 'gwei'),
                                 'gas': gaslimit,
-                                'value': amount,
+                                'value': amountIn,
                                 'from': Web3.toChecksumAddress(settings['WALLETADDRESS']),
                                 'nonce': client.eth.getTransactionCount(settings['WALLETADDRESS']),
                                 'type': "0x02"
                             })
                         
                         else:
+                            printt_debug("sell condition 17")
                             transaction = routerContract.functions.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, weth, outToken],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -3032,8 +3054,9 @@ def sell(token_dict, inToken, outToken):
                         if settings["EXCHANGE"].lower() == 'uniswap' or settings[
                             "EXCHANGE"].lower() == 'uniswaptestnet':
                             # Special condition on Uniswap, to implement EIP-1559
+                            printt_debug("sell condition 18")
                             transaction = routerContract.functions.swapExactTokensForTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, weth, outToken],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -3042,14 +3065,15 @@ def sell(token_dict, inToken, outToken):
                                 'maxFeePerGas': Web3.toWei(gas, 'gwei'),
                                 'maxPriorityFeePerGas': Web3.toWei(gaspriority, 'gwei'),
                                 'gas': gaslimit,
-                                'value': amount,
+                                'value': amountIn,
                                 'from': Web3.toChecksumAddress(settings['WALLETADDRESS']),
                                 'nonce': client.eth.getTransactionCount(settings['WALLETADDRESS']),
                                 'type': "0x02"
                             })
                         else:
+                            printt_debug("sell condition 19")
                             transaction = routerContract.functions.swapExactTokensForTokens(
-                                amount,
+                                amountIn,
                                 amountOutMin,
                                 [inToken, weth, outToken],
                                 Web3.toChecksumAddress(settings['WALLETADDRESS']),
@@ -3080,8 +3104,8 @@ def sell(token_dict, inToken, outToken):
             
             return tx_hash
     else:
-        "Your balance is very small (< 0.0000000001), so LimitSwap will not try to sell, so as not to waste fees."
-        pass
+        printt("Your", token_dict['SYMBOL'], "balance is very small (< 1), so LimitSwap will not try to sell, so as not to waste fees.")
+        return False
 
 
 def run():
@@ -3361,19 +3385,23 @@ def run():
                                 printt_ok("SUCCESS : your Tx is confirmed    ", write_to_log=True)
                                 # Re-calculate balances after buy()
                                 calculate_base_balance(token)
-                                
+
                                 # Check the balance of our wallet
                                 DECIMALS = decimals(inToken)
-                                token['_TOKEN_BALANCE'] = check_balance(inToken, token['SYMBOL'],
-                                                                        display_quantity=True) / DECIMALS
+                                token['_TOKEN_BALANCE'] = check_balance(inToken, token['SYMBOL'],display_quantity=True) / DECIMALS
                                 printt_ok("----------------------------------", write_to_log=True)
+                                
+                                # if user has chose the option "instantafterbuy", token is approved right after buy order is confirmed.
+                                if settings['PREAPPROVE'] == 'instantafterbuy':
+                                    check_approval(token, token['ADDRESS'], token['_TOKEN_BALANCE'] * DECIMALS)
+
+                                # Check if MAXTOKENS is reached or not
                                 if token['_TOKEN_BALANCE'] > Decimal(token['MAXTOKENS']):
                                     token['_REACHED_MAX_TOKENS'] = True
-                                    printt_info("You have reached the maximum number of tokens for this position.",
-                                                write_to_log=True)
-                                
-                                token['_COST_PER_TOKEN'] = float(token['BUYAMOUNTINBASE']) / float(
-                                    token['_TOKEN_BALANCE'])
+                                    printt_info("You have reached the maximum number of tokens for this position.", write_to_log=True)
+
+                                # Calculates cost per token
+                                token['_COST_PER_TOKEN'] = float(token['BUYAMOUNTINBASE']) / float(token['_TOKEN_BALANCE'])
                                 printt_debug(token['SYMBOL'], " cost per token was: ", token['_COST_PER_TOKEN'])
                     
                     #
@@ -3432,8 +3460,13 @@ def run():
                                 printt_err("- GASLIMIT too low", write_to_log=False)
                                 printt_err("- SLIPPAGE too low", write_to_log=False)
                                 printt_err("- your node is not working well", write_to_log=False)
+                                printt_err("- you did not approve this token to be sold --> LimitSwap will now check if approval is done", write_to_log=False)
                                 printt_err("-------------------------------", write_to_log=False)
                                 token['_FAILED_TRANSACTIONS'] += 1
+                                
+                                # We ask the bot to check if your allowance is > to your balance.
+                                check_approval(token, inToken, token['_TOKEN_BALANCE'] * DECIMALS)
+
                                 printt_debug("3095 _FAILED_TRANSACTIONS:", token['_FAILED_TRANSACTIONS'])
                             else:
                                 # transaction is a SUCCESS
