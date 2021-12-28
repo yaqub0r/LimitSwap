@@ -2069,6 +2069,25 @@ def make_the_buy(inToken, outToken, buynumber, pwd, amount, gas, gaslimit, gaspr
                 # This section is for exchange with Modified = false --> uniswap / pancakeswap / apeswap, etc.
                 
                 # Special condition on Uniswap, to implement EIP-1559
+
+                printt("------------------------------------------------------------------------",
+                       write_to_log=True)
+                printt("temporary log write for ETH transaction only, to make some investigations",
+                       write_to_log=True)
+                printt("------------------------------------------------------------------------",
+                       write_to_log=True)
+                printt("amountOutMin:", amountOutMin, write_to_log=True)
+                printt("weth:", weth, write_to_log=True)
+                printt("outToken:", outToken, write_to_log=True)
+                printt("walletused:", walletused, write_to_log=True)
+                printt("deadline:", deadline, write_to_log=True)
+                printt("gas:", gas, write_to_log=True)
+                printt("gaspriority:", gaspriority, write_to_log=True)
+                printt("gaslimit:", gaslimit, write_to_log=True)
+                printt("amount:", amount, write_to_log=True)
+                printt("------------------------------------------------------------------------",
+                       write_to_log=True)
+
                 if settings["EXCHANGE"].lower() == 'uniswap' or settings["EXCHANGE"].lower() == 'uniswaptestnet':
                     logging.info("make_the_buy condition 3")
                     
