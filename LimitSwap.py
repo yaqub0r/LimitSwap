@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+idk setting up Prometheus is in their docs.# -*- coding: utf-8 -*-
 from toolz.functoolz import do
 from web3 import Web3
 from time import sleep, time
@@ -1573,7 +1573,7 @@ def check_bnb_balance():
 #     # --------------------
 #     # check and display the number of base tokens in the user's
 #     #
-#     # token_dict - one element of the tokens{} dictionary
+#     # token - one element of the tokens{} dictionary
 #     #
 #     # returns - balance in base token
 #     #         - sets token['_EXCHANGE_BASE'] to number of tokens available
@@ -1673,13 +1673,10 @@ def get_tokens_purchased(tx_hash):
     exit(0)
 
 
-def check_liquidity(token_dict, all_tokens):
+def check_liquidity(token, tokens):
     # Function: check_liquidity
     # ----------------------------
     # Tells if the liquidity of tokens purchased is enough for trading or not
-    #
-    # token_dict - the element of the tokens{} dictionary that we are looking for liquidity
-    # all_tokens - the dictionary of all tokens the user would like to trade
     #
     # returns:
     #       - 0 if NOT OK for trading
@@ -1694,46 +1691,46 @@ def check_liquidity(token_dict, all_tokens):
     
     printt_debug("ENTER: check_liquidity()")
     
-    inToken = Web3.toChecksumAddress(token_dict['ADDRESS'])
-    outToken = Web3.toChecksumAddress(token_dict['BASEADDRESS'])
+    inToken = Web3.toChecksumAddress(token['ADDRESS'])
+    outToken = Web3.toChecksumAddress(token['BASEADDRESS'])
     
-    if token_dict['_LIQUIDITY_CHECKED'] == False:
+    if token['_LIQUIDITY_CHECKED'] == False:
         # Cases 1 and 2 above : we always use weth as LP pair to check liquidity
-        if token_dict["LIQUIDITYINNATIVETOKEN"] == 'true':
-            pool = check_pool(inToken, weth, base_symbol, token_dict['_CONTRACT_DECIMALS'], token_dict['_BASE_DECIMALS'])
+        if token["LIQUIDITYINNATIVETOKEN"] == 'true':
+            pool = check_pool(inToken, weth, base_symbol, token['_CONTRACT_DECIMALS'], token['_BASE_DECIMALS'])
             printt("You have set LIQUIDITYCHECK = true.")
-            printt("Current", token_dict['SYMBOL'], "Liquidity =", int(pool), base_symbol)
+            printt("Current", token['SYMBOL'], "Liquidity =", int(pool), base_symbol)
             
-            if float(token_dict['LIQUIDITYAMOUNT']) <= float(pool):
-                printt_ok("LIQUIDITYAMOUNT parameter =", int(token_dict['LIQUIDITYAMOUNT']),
+            if float(token['LIQUIDITYAMOUNT']) <= float(pool):
+                printt_ok("LIQUIDITYAMOUNT parameter =", int(token['LIQUIDITYAMOUNT']),
                           " --> Enough liquidity detected : Buy Signal Found!")
                 return 1
             
             # This position isn't looking good. Inform the user, disable the token and break out of this loop
             else:
-                printt_warn("LIQUIDITYAMOUNT parameter =", int(token_dict['LIQUIDITYAMOUNT']),
+                printt_warn("LIQUIDITYAMOUNT parameter =", int(token['LIQUIDITYAMOUNT']),
                             " : not enough liquidity, bot will not buy. Disabling the trade of this token.")
-                token_dict['ENABLED'] = 'false'
+                token['ENABLED'] = 'false'
                 quote = 0
                 sys.exit()
                 return 0
         
         # Case 3 above
-        if token_dict["LIQUIDITYINNATIVETOKEN"] == 'false' and token_dict["USECUSTOMBASEPAIR"] == 'true':
-            pool = check_pool(inToken, outToken, token_dict['BASESYMBOL'], token_dict['_CONTRACT_DECIMALS'], token_dict['_BASE_DECIMALS'])
+        if token["LIQUIDITYINNATIVETOKEN"] == 'false' and token["USECUSTOMBASEPAIR"] == 'true':
+            pool = check_pool(inToken, outToken, token['BASESYMBOL'], token['_CONTRACT_DECIMALS'], token['_BASE_DECIMALS'])
             printt("You have set LIQUIDITYCHECK = true.")
-            printt("Current", token_dict['SYMBOL'], "Liquidity =", int(pool), token_dict['BASESYMBOL'])
+            printt("Current", token['SYMBOL'], "Liquidity =", int(pool), token['BASESYMBOL'])
             
-            if float(token_dict['LIQUIDITYAMOUNT']) <= float(pool):
-                printt_ok("LIQUIDITYAMOUNT parameter =", int(token_dict['LIQUIDITYAMOUNT']),
+            if float(token['LIQUIDITYAMOUNT']) <= float(pool):
+                printt_ok("LIQUIDITYAMOUNT parameter =", int(token['LIQUIDITYAMOUNT']),
                           " --> Enough liquidity detected : Buy Signal Found!")
                 return 1
             
             # This position isn't looking good. Inform the user, disable the token and break out of this loop
             else:
-                printt_warn("LIQUIDITYAMOUNT parameter =", int(token_dict['LIQUIDITYAMOUNT']),
+                printt_warn("LIQUIDITYAMOUNT parameter =", int(token['LIQUIDITYAMOUNT']),
                             " : not enough liquidity, bot will not buy. Disableing the trade of this token.")
-                token_dict['ENABLED'] = 'false'
+                token['ENABLED'] = 'false'
                 quote = 0
                 sys.exit()
                 return 0
@@ -2757,8 +2754,7 @@ def run():
 
             # Calculate how much gas we should use for this token
             calculate_gas(token)
-            printt_debug(Web3.toChecksumAddress(token['ADDRESS']), token['ADDRESS'])
-            exit(0)
+
             if token['RUGDOC_CHECK'] == 'true':
 
                 honeypot = honeypot_check(address=token['ADDRESS'])
