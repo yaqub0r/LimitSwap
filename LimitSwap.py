@@ -14,7 +14,8 @@ import requests
 import cryptocode, re, pwinput
 import argparse
 import signal
-import ccxt
+import ccxt # update requirements
+from pynput import keyboard # update requirements
 
 # DEVELOPER CONSIDERATIONS
 #
@@ -50,7 +51,10 @@ import ccxt
 # GLOBALS
 #
 # Global used for printt_repeating to track how many repeated messages have been printed to console
-repeated_message_quantity = 0    
+repeated_message_quantity = 0
+# Global used for panic sell - sell all positions immediately and disable all tokens
+panic_sell = False
+
 
 # color styles
 class style():  # Class of different text colours - default is white
@@ -69,7 +73,6 @@ class style():  # Class of different text colours - default is white
 # Function to cleanly exit on SIGINT
 def signal_handler(sig, frame):
     sys.exit(0)
-
 
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -209,8 +212,8 @@ def printt_debug(*print_args, write_to_log=False):
     #
     # returns: nothing
 
-    if bot_settings['_NEED_NEW_LINE'] == True: print()
     if command_line_args.debug == True:
+        if bot_settings['_NEED_NEW_LINE'] == True: print()
         print(timestamp(), " ", style.DEBUG, ' '.join(map(str,print_args)), style.RESET, sep="")
 
     if write_to_log == True:
@@ -249,7 +252,7 @@ def printt_sell_price(token_dict, token_price):
     #     returns: nothing
 
     price_message = token_dict['SYMBOL'] + " Price:" + str(token_price) + " Buy:" + str(token_dict['BUYPRICEINBASE']) 
-    price_message = price_message + " Sell:" + str(token_dict['SELLPRICEINBASE']) + " Stop:" + str(token_dict['STOPLOSSPRICEINBASE'])
+    price_message = price_message + " Sell:" + str(token_dict['_ACTUAL_SELLPRICEINBASE']) + " Stop:" + str(token_dict['_ACTUAL_STOPLOSSPRICEINBASE'])
     price_message = price_message + " ATH:" + str(token_dict['_ALL_TIME_HIGH']) + " ATL:" + str(token_dict['_ALL_TIME_LOW'])
     price_message = price_message + " Queries/s: " + bot_settings['_QUERIES_PER_SECOND'] 
 
@@ -465,6 +468,15 @@ def load_tokens_file(tokens_path, load_message=True):
         'STOPLOSSPRICEINBASE' : 0
     }
 
+    # TODO: Parse values before starting the program
+    # These check the SELLPRICE possibilities
+    # if re.search('^(\d+\.){0,1}\d+%$', str(sell)):
+    #     printt_debug("Found percentage for", sell)
+    # elif re.search('^(\d+\.){0,1}\d+(x|X)$', str(sell)):
+    #     printt_debug("Found multiplier for", sell)
+    # ALSO ADDRESS TODO 202201040554
+    # TODO: Make sure the sell price in base isn't less than 100%, otherwise it's a stop
+
     # There are values that we will set internally. They must all begin with _
     # _INFORMED_SELL         - set to true when we've already informed the user that we're selling this position
     # _LIQUIDITY_READY       - a flag to test if we've found liquidity for this pair
@@ -513,8 +525,9 @@ def load_tokens_file(tokens_path, load_message=True):
         '_BUILT_BY_BOT' : False,
         '_EXCHANGE_BASE_SYMBOL' : settings['_EXCHANGE_BASE_SYMBOL'],
         '_PAIR_SYMBOL' : '',
+        '_ACTUAL_SELLPRICEINBASE' : 0,
+        '_ACTUAL_STOPLOSSPRICEINBASE' : 0,
         '_STABLE_BASES' : {}
-
     }
     
     for token in tokens:
@@ -1328,7 +1341,6 @@ def build_extended_base_configuration (token_dict):
         new_token.update({
                         'BUYAMOUNTINBASE': token_dict['BUYAMOUNTINBASE'] * settings['_STABLE_BASES'][stable_token]['multiplier'],
                         "BUYPRICEINBASE": token_dict['BUYPRICEINBASE'] * settings['_STABLE_BASES'][stable_token]['multiplier'],
-                        "SELLPRICEINBASE": token_dict['SELLPRICEINBASE'] * settings['_STABLE_BASES'][stable_token]['multiplier'],
                         "LIQUIDITYAMOUNT": token_dict['LIQUIDITYAMOUNT'] * settings['_STABLE_BASES'][stable_token]['multiplier'],
                         "LIQUIDITYINNATIVETOKEN": "false",
                         "USECUSTOMBASEPAIR": "true",
@@ -1337,6 +1349,13 @@ def build_extended_base_configuration (token_dict):
                         "_PAIR_SYMBOL" : token_dict['SYMBOL'] + '/' + stable_token,
                         "_BUILT_BY_BOT" : True
                         })
+
+        # If these these keys have special character on them, the represent percentages and we shouldn't copy them.
+        if not re.search('^(\d+\.){0,1}\d+(x|X|%)$', str(token_dict['SELLPRICEINBASE'])):
+            new_token['SELLPRICEINBASE'] = token_dict['SELLPRICEINBASE'] * settings['_STABLE_BASES'][stable_token]['multiplier']
+        if not re.search('^(\d+\.){0,1}\d+(x|X|%)$', str(token_dict['STOPLOSSPRICEINBASE'])):
+            new_token['STOPLOSSPRICEINBASE'] = token_dict['STOPLOSSPRICEINBASE'] * settings['_STABLE_BASES'][stable_token]['multiplier'],
+
         new_token_set.append(new_token)
 
     return new_token_set
@@ -2701,6 +2720,54 @@ def sell(token_dict, inToken, outToken):
     else:
         pass
 
+def build_sell_conditions(token_dict, buy=0, sell=0, stop=0):
+    # Function: build_sell_conditions
+    # ----------------------------
+    # This function is designed to be called anytime sell conditions need to be adjusted for a token
+    #
+    # token_dict - one element of the tokens{} dictionary
+    # buy - provides the opportunity to specify a buy price, otherwise token_dict['_COST_PER_TOKEN'] is used
+    # sell - provides the opportunity to specify a buy price, otherwise token_dict['SELLPRICEINBASE'] is used
+    # stop - provides the opportunity to specify a buy price, otherwise token_dict['STOPLOSSPRICEINBASE'] is used
+
+    if buy==0: buy = token_dict['_COST_PER_TOKEN']
+    if sell==0: sell = token_dict['SELLPRICEINBASE']
+    if stop==0: stop = token_dict['STOPLOSSPRICEINBASE']
+    
+    # Check to see if the SELLPRICEINBASE is a percentage of the purchase
+    if re.search('^(\d+\.){0,1}\d+%$', str(sell)):
+        sell = sell.replace("%","")
+        token_dict['_ACTUAL_SELLPRICEINBASE'] = token_dict['_COST_PER_TOKEN'] * (float(sell) / 100)
+    # Check to see if the SELLPRICEINBASE is a multipler
+    elif re.search('^(\d+\.){0,1}\d+(x|X)$', str(sell)):
+        sell = sell.replace("x", "")
+        # TODO 202201040554 : Remove this assignement after formatting input properly
+        sell = sell.replace("X", "")
+        token_dict['_ACTUAL_SELLPRICEINBASE'] = token_dict['_COST_PER_TOKEN'] * float(sell)
+    # Otherwise, don't adjust the sell price in base
+    else:
+        token_dict['_ACTUAL_SELLPRICEINBASE'] = sell
+
+    # Check to see if the STOPLOSSPRICEINBASE is a percentage of the purchase
+    if re.search('^(\d+\.){0,1}\d+%$', str(stop)):
+        stop = stop.replace("%","")
+        token_dict['_ACTUAL_STOPLOSSPRICEINBASE'] = token_dict['_COST_PER_TOKEN'] * (float(stop) / 100)
+    # Otherwise, don't adjust the sell price in base
+    else:
+        token_dict['_ACTUAL_STOPLOSSPRICEINBASE'] = stop
+    
+def print_sell_report(token_dict, price_sold, quantity_sold):
+    # Function: print_sell_report
+    # ----------------------------
+    # print a report on the position that was sold
+    #
+    # token_dict - the token we sold
+    # price_sold - the price we believe we sold it at 
+    # quantity_sold - the quantity we believe we sold it for
+    #
+    exit(0)
+
+
 def check_liquidity(token_dict, all_tokens_dict) :
     # Function: check_liquidity()
     # ----------------------------
@@ -2715,38 +2782,35 @@ def check_liquidity(token_dict, all_tokens_dict) :
     #
     #          additionally - enables and disables trading pairs as necessary
 
-    printt_debug ("ENTER: check_liquidity()")
+    try:
+        pool = check_pool(token_dict['ADDRESS'], token_dict['BASEADDRESS'], token_dict['BASESYMBOL'])
+        if pool > 0:
+            token_dict['_LIQUIDITY_READY'] = True
+            printt_info ("Found liquidity for",token_dict['SYMBOL'])
 
-    printt_debug (token_dict['ADDRESS'])
-    printt_debug (token_dict['BASEADDRESS'])
+            if token_dict["LIQUIDITYCHECK"] == 'true':
+                good_liquidity = check_liquidity_amount(token_dict)
+            else:
+                good_liquidity = True
 
-    pool = check_pool(token_dict['ADDRESS'], token_dict['BASEADDRESS'], token_dict['BASESYMBOL'])
-    
-    if pool > 0:
-        token_dict['_LIQUIDITY_READY'] = True
-        printt_info ("Found liquidity for",token_dict['SYMBOL'])
+            # If the amount of liquidity checks out, check to make sure that we aren't in a mode that's checking for
+            # stable coins. If we are disable all other liquidity checks for this token
+            if good_liquidity == True:
+                for stable_search_token in all_tokens_dict:
+                    if stable_search_token['WATCH_STABLES_ALSO'] == "true" and stable_search_token['ENABLED'] == "true" and \
+                        (stable_search_token['ADDRESS'] == token_dict['ADDRESS']) and (stable_search_token['BASEADDRESS'] != token_dict['BASEADDRESS']):
+                        
+                        printt_info("Disabling liquidity for", stable_search_token['_PAIR_SYMBOL'], "- found liquidity in another pair.")
+                        stable_search_token['ENABLED'] = "false"
+            
+            printt_debug ("EXIT: check_liquidity()")
+            return good_liquidity
 
-        if token_dict["LIQUIDITYCHECK"] == 'true':
-            good_liquidity = check_liquidity_amount(token_dict)
         else:
-            good_liquidity = True
-
-        # If the amount of liquidity checks out, check to make sure that we aren't in a mode that's checking for
-        # stable coins. If we are disable all other liquidity checks for this token
-        if good_liquidity == True:
-            for stable_search_token in all_tokens_dict:
-                if stable_search_token['WATCH_STABLES_ALSO'] == "true" and stable_search_token['ENABLED'] == "true" and \
-                    (stable_search_token['ADDRESS'] == token_dict['ADDRESS']) and (stable_search_token['BASEADDRESS'] != token_dict['BASEADDRESS']):
-                    
-                    printt_info("Disabling liquidity for", stable_search_token['_PAIR_SYMBOL'], "- found liquidity in another pair.")
-                    stable_search_token['ENABLED'] = "false"
-        
-        printt_debug ("EXIT: check_liquidity()")
-        return good_liquidity
-
-    else:
+            printt_repeating (token_dict, token_dict['_PAIR_SYMBOL'] + " - Liquidity value of zero found [" + bot_settings['_QUERIES_PER_SECOND']  + " queries/s]")
+            return False
+    except Exception:
         printt_repeating (token_dict, token_dict['_PAIR_SYMBOL'] + " - Waiting for liquidity to be added on exchange [" + bot_settings['_QUERIES_PER_SECOND']  + " queries/s]")
-        printt_debug ("EXIT: check_liquidity()")
         return False
 
 
@@ -2764,6 +2828,8 @@ def run():
         approximate_queries_per_second =  command_line_args.cooldown
     elif settings['USECUSTOMNODE'] == 'false':
         approximate_queries_per_second =  10
+    else:
+        approximate_queries_per_second = 30000
 
     try:
 
@@ -2931,7 +2997,7 @@ def run():
                     token['_PREVIOUS_QUOTE'] = quote
                     quote = check_price(inToken, outToken, token['SYMBOL'], token['BASESYMBOL'],
                                        token['USECUSTOMBASEPAIR'], token['LIQUIDITYINNATIVETOKEN'],
-                                       token['BUYPRICEINBASE'], token['SELLPRICEINBASE'], token['STOPLOSSPRICEINBASE'])
+                                       token['BUYPRICEINBASE'], token['_ACTUAL_SELLPRICEINBASE'], token['_ACTUAL_STOPLOSSPRICEINBASE'])
                     
                     if token['_ALL_TIME_HIGH'] == 0 and token['_ALL_TIME_LOW'] == 0:
                         token['_ALL_TIME_HIGH'] = quote
@@ -3016,6 +3082,13 @@ def run():
                             printt_info("You own more tokens than your MAXTOKENS parameter for",token['SYMBOL'], " Looking to sell this position")
                             token['_INFORMED_SELL'] = True
 
+                            # Build sell conditions for the token
+                            if token['_COST_PER_TOKEN'] == 0 :
+                                token['_COST_PER_TOKEN'] = check_price(token['ADDRESS'], token['BASEADDRESS'], token['SYMBOL'], token['BASESYMBOL'],
+                                                                       token['USECUSTOMBASEPAIR'], token['LIQUIDITYINNATIVETOKEN'],
+                                                                       token['BUYPRICEINBASE'], token['_ACTUAL_SELLPRICEINBASE'], token['_ACTUAL_STOPLOSSPRICEINBASE'])
+                            build_sell_conditions(token)
+
                         printt_sell_price (token, quote)
 
                         # Looking to dump this token as soon as it drops <PUMP> percentage from our gains
@@ -3038,7 +3111,7 @@ def run():
                                     printt_err(token['SYMBOL'],"has dropped", command_line_args.pump,"% from it's ATH - SELLING POSITION")
                                     price_conditions_met = True
 
-                        elif quote > Decimal(token['SELLPRICEINBASE']) or quote < Decimal(token['STOPLOSSPRICEINBASE']):
+                        elif quote > Decimal(token['_ACTUAL_SELLPRICEINBASE']) or quote < Decimal(token['_ACTUAL_STOPLOSSPRICEINBASE']):
                             price_conditions_met = True
 
                         if price_conditions_met == True :
